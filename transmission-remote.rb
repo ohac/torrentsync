@@ -4,7 +4,7 @@ require 'nokogiri'
 require 'net/http'
 require 'json'
 
-def list(host, port)
+def transmission_list(host, port)
   Net::HTTP.start(host, port) do |http|
     res = http.get('/transmission/rpc')
     h = Nokogiri::HTML.parse(res.body)
@@ -22,11 +22,35 @@ def list(host, port)
   end
 end
 
+def utorrent_list(host, port, user, pass)
+  Net::HTTP.start(host, port) do |http|
+    req = Net::HTTP::Get.new('/gui/token.html')
+    req.basic_auth user, pass
+    res = http.request(req)
+    h = Nokogiri::HTML.parse(res.body)
+    token = h.css('#token').text
+    req = Net::HTTP::Get.new('/gui/?list=1&token=%s' % token)
+    req.basic_auth user, pass
+    res = http.request(req)
+    result = JSON.parse(res.body)
+    transmissionlike = result['torrents'].map do |t|
+      { 'hashString' => t[0].downcase, 'name' => t[2] }
+    end
+    { 'arguments' => { 'torrents' => transmissionlike } }
+  end
+end
+
 torrents = {}
 peers = File.open('peers').readlines.map(&:chomp).map(&:split)
 peers.each do |peer|
-  host, port = peer[0], peer[1].to_i
-  tr = list(host, port)
+  type = peer[0]
+  host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+  tr = case type
+      when 'transmission'
+        transmission_list(host, port)
+      when 'utorrent'
+        utorrent_list(host, port, user, pass)
+      end
   tr['arguments']['torrents'].each do |t|
     h = t['hashString']
     torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)

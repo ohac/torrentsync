@@ -1,2 +1,2 @@
-localhost 9091
-192.168.24.77 9091
+transmission localhost 9091
+utorrent 192.168.24.77 12345 username password
