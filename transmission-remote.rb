@@ -4,6 +4,7 @@ require 'nokogiri'
 require 'net/http'
 require 'json'
 require 'timeout'
+require 'fileutils'
 
 def transmission_list(host, port)
   Net::HTTP.start(host, port) do |http|
@@ -41,8 +42,17 @@ def utorrent_list(host, port, user, pass)
   end
 end
 
+SETTING_DIR = "#{ENV['HOME']}/.torrentsync"
+PEERS_FILE = File.join(SETTING_DIR, 'peers')
+unless File.exist?(SETTING_DIR)
+  FileUtils.mkdir SETTING_DIR
+  open(PEERS_FILE, 'w') do |fd|
+    fd.puts('transmission localhost 9091')
+  end
+end
+
 torrents = {}
-peers = File.open('peers').readlines.map(&:chomp).map(&:split)
+peers = File.open(PEERS_FILE).readlines.map(&:chomp).map(&:split)
 peers.each do |peer|
   type = peer[0]
   next if type[0, 1] == '#'
