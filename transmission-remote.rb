@@ -3,6 +3,7 @@ require 'rubygems'
 require 'nokogiri'
 require 'net/http'
 require 'json'
+require 'timeout'
 
 def transmission_list(host, port)
   Net::HTTP.start(host, port) do |http|
@@ -44,13 +45,21 @@ torrents = {}
 peers = File.open('peers').readlines.map(&:chomp).map(&:split)
 peers.each do |peer|
   type = peer[0]
+  next if type[0, 1] == '#'
   host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
-  tr = case type
+  tr = begin
+    timeout(2) do
+      case type
       when 'transmission'
         transmission_list(host, port)
       when 'utorrent'
         utorrent_list(host, port, user, pass)
       end
+    end
+  rescue TimeoutError
+    nil
+  end
+  next if tr.nil?
   tr['arguments']['torrents'].each do |t|
     h = t['hashString']
     torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
