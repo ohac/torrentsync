@@ -5,6 +5,7 @@ require 'net/http'
 require 'json'
 require 'timeout'
 require 'fileutils'
+require 'open-uri'
 
 def transmission_list(host, port)
   Net::HTTP.start(host, port) do |http|
@@ -42,13 +43,40 @@ def utorrent_list(host, port, user, pass)
   end
 end
 
-SETTING_DIR = "#{ENV['HOME']}/.torrentsync"
+HOME_DIR = ENV['HOME']
+SETTING_DIR = "#{HOME_DIR}/.torrentsync"
 PEERS_FILE = File.join(SETTING_DIR, 'peers')
+TORRENTS_FILE = File.join(SETTING_DIR, 'torrents')
 unless File.exist?(SETTING_DIR)
   FileUtils.mkdir SETTING_DIR
   open(PEERS_FILE, 'w') do |fd|
     fd.puts('transmission localhost 9091')
   end
+  open(TORRENTS_FILE, 'w') do |fd|
+    fd.puts("file:#{HOME_DIR}/.config/transmission/torrents")
+  end
+end
+
+def find_torrent(name)
+  uris = File.open(TORRENTS_FILE).readlines.map(&:chomp).map{|u| URI.parse(u)}
+  rv = nil
+  uris.each do |uri|
+    ts = case uri.scheme
+    when 'file'
+      Dir.glob(File.join(uri.path, '*.torrent')).map{|t|File.basename(t)}
+    when 'http'
+      body = open(uri).read
+      h = Nokogiri::HTML.parse(body)
+      h.css('a').map{|a| a.text}.select{|t| /\.torrent$/ === t}
+    else
+      raise
+    end
+    rv = ts.find{|t| !t.index(name).nil?}
+    next if rv.nil?
+    rv = URI.parse(URI.encode("#{uri.to_s}/#{rv}"))
+    break
+  end
+  rv
 end
 
 torrents = {}
@@ -78,5 +106,7 @@ peers.each do |peer|
 end
 
 torrents.each do |hash, t|
-  puts "%d %s" % [t[:peers].size, t[:name]]
+  name = t[:name]
+  found = find_torrent(t[:name]).nil? ? '0' : '1'
+  puts "%d %s %s" % [t[:peers].size, found, name]
 end
