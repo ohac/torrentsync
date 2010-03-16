@@ -7,39 +7,57 @@ require 'timeout'
 require 'fileutils'
 require 'open-uri'
 
-def transmission_list(host, port)
-  Net::HTTP.start(host, port) do |http|
-    res = http.get('/transmission/rpc')
-    h = Nokogiri::HTML.parse(res.body)
-    sessionid = h.css('code').text.split.last
-    header = {
-      'X-Transmission-Session-Id' => sessionid,
-      'Content-Type' => 'application/json',
-    }
-    json = {
-      :method => 'torrent-get',
-      :arguments => { :fields => [ :hashString, :id, :name ] }
-    }
-    res = http.post('/transmission/rpc', json.to_json, header)
-    JSON.parse(res.body)
+class Transmission
+  def initialize(host, port, user = nil, pass = nil)
+    @host = host
+    @port = port
+    @user = user
+    @pass = pass
+  end
+
+  def list
+    Net::HTTP.start(@host, @port) do |http|
+      res = http.get('/transmission/rpc')
+      h = Nokogiri::HTML.parse(res.body)
+      sessionid = h.css('code').text.split.last
+      header = {
+        'X-Transmission-Session-Id' => sessionid,
+        'Content-Type' => 'application/json',
+      }
+      json = {
+        :method => 'torrent-get',
+        :arguments => { :fields => [ :hashString, :id, :name ] }
+      }
+      res = http.post('/transmission/rpc', json.to_json, header)
+      JSON.parse(res.body)
+    end
   end
 end
 
-def utorrent_list(host, port, user, pass)
-  Net::HTTP.start(host, port) do |http|
-    req = Net::HTTP::Get.new('/gui/token.html')
-    req.basic_auth user, pass
-    res = http.request(req)
-    h = Nokogiri::HTML.parse(res.body)
-    token = h.css('#token').text
-    req = Net::HTTP::Get.new('/gui/?list=1&token=%s' % token)
-    req.basic_auth user, pass
-    res = http.request(req)
-    result = JSON.parse(res.body)
-    transmissionlike = result['torrents'].map do |t|
-      { 'hashString' => t[0].downcase, 'name' => t[2] }
+class UTorrent
+  def initialize(host, port, user = nil, pass = nil)
+    @host = host
+    @port = port
+    @user = user
+    @pass = pass
+  end
+
+  def list
+    Net::HTTP.start(@host, @port) do |http|
+      req = Net::HTTP::Get.new('/gui/token.html')
+      req.basic_auth @user, @pass
+      res = http.request(req)
+      h = Nokogiri::HTML.parse(res.body)
+      token = h.css('#token').text
+      req = Net::HTTP::Get.new('/gui/?list=1&token=%s' % token)
+      req.basic_auth @user, @pass
+      res = http.request(req)
+      result = JSON.parse(res.body)
+      transmissionlike = result['torrents'].map do |t|
+        { 'hashString' => t[0].downcase, 'name' => t[2] }
+      end
+      { 'arguments' => { 'torrents' => transmissionlike } }
     end
-    { 'arguments' => { 'torrents' => transmissionlike } }
   end
 end
 
@@ -87,12 +105,13 @@ peers.each do |peer|
   host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
   tr = begin
     timeout(2) do
-      case type
-      when 'transmission'
-        transmission_list(host, port)
-      when 'utorrent'
-        utorrent_list(host, port, user, pass)
-      end
+      clz = case type
+          when 'transmission'
+            Transmission
+          when 'utorrent'
+            UTorrent
+          end
+      clz.new(host, port, user, pass).list
     end
   rescue TimeoutError, Errno::ECONNREFUSED
     nil
