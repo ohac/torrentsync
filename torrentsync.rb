@@ -94,7 +94,7 @@ peers.each do |peer|
         utorrent_list(host, port, user, pass)
       end
     end
-  rescue TimeoutError
+  rescue TimeoutError, Errno::ECONNREFUSED
     nil
   end
   next if tr.nil?
