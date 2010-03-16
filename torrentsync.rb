@@ -6,6 +6,7 @@ require 'json'
 require 'timeout'
 require 'fileutils'
 require 'open-uri'
+require 'base64'
 
 class Transmission
   def initialize(host, port, user = nil, pass = nil)
@@ -32,6 +33,25 @@ class Transmission
       JSON.parse(res.body)
     end
   end
+
+  # TODO DRY
+  def add(torrent)
+    Net::HTTP.start(@host, @port) do |http|
+      res = http.get('/transmission/rpc')
+      h = Nokogiri::HTML.parse(res.body)
+      sessionid = h.css('code').text.split.last
+      header = {
+        'X-Transmission-Session-Id' => sessionid,
+        'Content-Type' => 'application/json',
+      }
+      json = {
+        :method => 'torrent-add',
+        :arguments => { :metainfo => Base64::encode64(torrent) }
+      }
+      http.post('/transmission/rpc', json.to_json, header)
+    end
+  end
+
 end
 
 class UTorrent
@@ -58,6 +78,10 @@ class UTorrent
       end
       { 'arguments' => { 'torrents' => transmissionlike } }
     end
+  end
+
+  # TODO not support yet
+  def add(torrent)
   end
 end
 
@@ -89,12 +113,28 @@ def find_torrent(name)
     else
       raise
     end
-    rv = ts.find{|t| !t.index(name).nil?}
-    next if rv.nil?
-    rv = URI.parse(URI.encode("#{uri.to_s}/#{rv}"))
+    rp = ts.find{|t| !t.index(name).nil?}
+    next if rp.nil?
+    uri2 = URI.parse(URI.encode("#{uri.to_s}/#{rp}"))
+    rv = case uri2.scheme
+        when 'file'
+          open(uri2.path){|f|f.read}
+        when 'http'
+          open(uri2){|f|f.read}
+        end
+    # TODO need to check info_hash too
     break
   end
   rv
+end
+
+def type2class(type)
+  case type
+  when 'transmission'
+    Transmission
+  when 'utorrent'
+    UTorrent
+  end
 end
 
 torrents = {}
@@ -105,13 +145,7 @@ peers.each do |peer|
   host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
   tr = begin
     timeout(2) do
-      clz = case type
-          when 'transmission'
-            Transmission
-          when 'utorrent'
-            UTorrent
-          end
-      clz.new(host, port, user, pass).list
+      type2class(type).new(host, port, user, pass).list
     end
   rescue TimeoutError, Errno::ECONNREFUSED
     nil
@@ -126,6 +160,18 @@ end
 
 torrents.each do |hash, t|
   name = t[:name]
-  found = find_torrent(t[:name]).nil? ? '0' : '1'
-  puts "%d %s %s" % [t[:peers].size, found, name]
+  hps = t[:peers]
+  next if hps.size >= 2
+  body = find_torrent(name)
+  next if body.nil?
+  hps = hps.map{|hp| host, port = hp.split(':'); [host, port.to_i]}
+  dests = peers.select do |peer|
+    hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
+  end
+  dest = dests.shuffle.first
+  puts "mirroring: %s to %s" % [name, dest.join(',')]
+  type = dest[0]
+  host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
+  dest = type2class(type).new(host, port, user, pass)
+  dest.add(body)
 end
