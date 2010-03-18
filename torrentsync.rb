@@ -17,14 +17,16 @@ class Transmission
   end
 
   def list
-    Net::HTTP.start(@host, @port) do |http|
+    sessionid = Net::HTTP.start(@host, @port) do |http|
       res = http.get('/transmission/rpc')
       h = Nokogiri::HTML.parse(res.body)
-      sessionid = h.css('code').text.split.last
-      header = {
-        'X-Transmission-Session-Id' => sessionid,
-        'Content-Type' => 'application/json',
-      }
+      h.css('code').text.split.last
+    end
+    header = {
+      'Content-Type' => 'application/json',
+    }
+    header['X-Transmission-Session-Id'] = sessionid unless sessionid.nil?
+    sessionid = Net::HTTP.start(@host, @port) do |http|
       json = {
         :method => 'torrent-get',
         :arguments => { :fields => [ :hashString, :id, :name ] }
@@ -36,14 +38,16 @@ class Transmission
 
   # TODO DRY
   def add(torrent)
-    Net::HTTP.start(@host, @port) do |http|
+    sessionid = Net::HTTP.start(@host, @port) do |http|
       res = http.get('/transmission/rpc')
       h = Nokogiri::HTML.parse(res.body)
-      sessionid = h.css('code').text.split.last
-      header = {
-        'X-Transmission-Session-Id' => sessionid,
-        'Content-Type' => 'application/json',
-      }
+      h.css('code').text.split.last
+    end
+    header = {
+      'Content-Type' => 'application/json',
+    }
+    header['X-Transmission-Session-Id'] = sessionid unless sessionid.nil?
+    Net::HTTP.start(@host, @port) do |http|
       json = {
         :method => 'torrent-add',
         :arguments => { :metainfo => Base64::encode64(torrent) }
