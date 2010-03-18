@@ -80,8 +80,28 @@ class UTorrent
     end
   end
 
-  # TODO not support yet
+  # TODO DRY
   def add(torrent)
+    Net::HTTP.start(@host, @port) do |http|
+      req = Net::HTTP::Get.new('/gui/token.html')
+      req.basic_auth @user, @pass
+      res = http.request(req)
+      h = Nokogiri::HTML.parse(res.body)
+      token = h.css('#token').text
+      req = Net::HTTP::Post.new('/gui/?action=add-file&token=%s' % token)
+      req.basic_auth @user, @pass
+      req.set_content_type('multipart/form-data; boundary=myboundary')
+      req.body = <<EOF
+--myboundary\r
+Content-Disposition: form-data; name="torrent_file"\r
+Content-Type: application/octet-stream\r
+Content-Transfer-Encoding: binary\r
+\r
+#{torrent}\r
+--myboundary--\r
+EOF
+      http.request(req)
+    end
   end
 end
 
