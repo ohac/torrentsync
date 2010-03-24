@@ -168,6 +168,7 @@ end
 
 def get_torrents(peers)
   torrents = {}
+  dead_peers = []
   peers.each do |peer|
     type = peer[0]
     next if type[0, 1] == '#'
@@ -177,6 +178,7 @@ def get_torrents(peers)
         type2class(type).new(host, port, user, pass).list
       end
     rescue TimeoutError, Errno::ECONNREFUSED
+      dead_peers << peer
       nil
     end
     next if tr.nil?
@@ -186,7 +188,7 @@ def get_torrents(peers)
       torrents[h][:peers] << [host, port].join(':')
     end
   end
-  torrents
+  [torrents, dead_peers]
 end
 
 def sync_torrents(peers, torrents)
@@ -213,6 +215,9 @@ Choice.options do
   option :sync do
     short '-s'
   end
+  option :html do
+    short '-h'
+  end
 end
 
 c = Choice.choices
@@ -220,4 +225,28 @@ if c.sync
   peers = get_peers
   torrents = get_torrents(peers)
   sync_torrents(peers, torrents)
+end
+if c.html
+  peers = get_peers
+  torrents, dead_peers = get_torrents(peers)
+  puts "<html>"
+  puts "<body>"
+
+  puts "<table>"
+  puts "<tr><th>Client</th><th>Host</th><th>Port</th><th>Dead?</th></tr>"
+  peers.each do |peer|
+    dead = dead_peers.include? peer
+    puts "<tr><td>#{peer[0]}</td><td>#{peer[1]}</td><td>#{peer[2]}</td><td>#{dead}</td></tr>"
+  end
+  puts "</table>"
+
+  puts "<table>"
+  puts "<tr><th>Hash</th><th>Name</th><th>Peers</th></tr>"
+  torrents.each do |hash, t|
+    puts "<tr><td>#{hash}</td><td>#{t[:name]}</td><td>#{t[:peers].size}</td></tr>"
+  end
+  puts "</table>"
+
+  puts "</body>"
+  puts "</html>"
 end
