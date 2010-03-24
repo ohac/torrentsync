@@ -7,6 +7,7 @@ require 'timeout'
 require 'fileutils'
 require 'open-uri'
 require 'base64'
+require 'choice'
 
 class Transmission
   def initialize(host, port, user = nil, pass = nil)
@@ -161,41 +162,62 @@ def type2class(type)
   end
 end
 
-torrents = {}
-peers = File.open(PEERS_FILE).readlines.map(&:chomp).map(&:split)
-peers.each do |peer|
-  type = peer[0]
-  next if type[0, 1] == '#'
-  host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
-  tr = begin
-    timeout(2) do
-      type2class(type).new(host, port, user, pass).list
+def get_peers
+  File.open(PEERS_FILE).readlines.map(&:chomp).map(&:split)
+end
+
+def get_torrents(peers)
+  torrents = {}
+  peers.each do |peer|
+    type = peer[0]
+    next if type[0, 1] == '#'
+    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+    tr = begin
+      timeout(2) do
+        type2class(type).new(host, port, user, pass).list
+      end
+    rescue TimeoutError, Errno::ECONNREFUSED
+      nil
     end
-  rescue TimeoutError, Errno::ECONNREFUSED
-    nil
+    next if tr.nil?
+    tr['arguments']['torrents'].each do |t|
+      h = t['hashString']
+      torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
+      torrents[h][:peers] << [host, port].join(':')
+    end
   end
-  next if tr.nil?
-  tr['arguments']['torrents'].each do |t|
-    h = t['hashString']
-    torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
-    torrents[h][:peers] << [host, port].join(':')
+  torrents
+end
+
+def sync_torrents(peers, torrents)
+  torrents.each do |hash, t|
+    name = t[:name]
+    hps = t[:peers]
+    next if hps.size >= 2
+    body = find_torrent(name)
+    next if body.nil?
+    hps = hps.map{|hp| host, port = hp.split(':'); [host, port.to_i]}
+    dests = peers.select do |peer|
+      hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
+    end
+    dest = dests.shuffle.first
+    puts "mirroring: %s to %s" % [name, dest.join(',')]
+    type = dest[0]
+    host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
+    dest = type2class(type).new(host, port, user, pass)
+    dest.add(body)
   end
 end
 
-torrents.each do |hash, t|
-  name = t[:name]
-  hps = t[:peers]
-  next if hps.size >= 2
-  body = find_torrent(name)
-  next if body.nil?
-  hps = hps.map{|hp| host, port = hp.split(':'); [host, port.to_i]}
-  dests = peers.select do |peer|
-    hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
+Choice.options do
+  option :sync do
+    short '-s'
   end
-  dest = dests.shuffle.first
-  puts "mirroring: %s to %s" % [name, dest.join(',')]
-  type = dest[0]
-  host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
-  dest = type2class(type).new(host, port, user, pass)
-  dest.add(body)
+end
+
+c = Choice.choices
+if c.sync
+  peers = get_peers
+  torrents = get_torrents(peers)
+  sync_torrents(peers, torrents)
 end
