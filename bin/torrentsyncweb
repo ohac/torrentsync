@@ -1,0 +1,82 @@
+#!/usr/bin/env ruby
+# -*- coding: utf-8 -*-
+self_file =
+  if File.symlink?(__FILE__)
+    require 'pathname'
+    Pathname.new(__FILE__).realpath
+  else
+    __FILE__
+  end
+$:.unshift(File.dirname(self_file) + "/../lib")
+
+require 'torrentsync'
+require 'sinatra'
+
+TORRENTSYNC_HOME = File.dirname(__FILE__) + '/../'
+set :public, TORRENTSYNC_HOME + 'public'
+set :views, TORRENTSYNC_HOME + 'views'
+
+enable :sessions
+
+helpers do
+
+  include Rack::Utils; alias_method :h, :escape_html
+  def partial(template, options = {})
+    options = options.merge({:layout => false})
+    template = "_#{template.to_s}".to_sym
+    haml(template, options)
+  end
+
+end
+
+CONTENT_TYPES = {
+    :html => 'text/html',
+    :css => 'text/css',
+    :js => 'application/javascript',
+    :yaml => 'text/yaml',
+    :txt => 'text/plain',
+    }
+
+before do
+  request_uri = case request.env['REQUEST_URI']
+    when /\.css$/ : :css
+    when /\.js$/ : :js
+    when /\.yaml$/ : :txt
+    when /\.txt$/ : :txt
+    else :html
+  end
+  content_type CONTENT_TYPES[request_uri], :charset => 'utf-8'
+  response.headers['Cache-Control'] = 'no-cache'
+end
+
+get '/' do
+  peers = get_peers
+  torrents, dead_peers = get_torrents(peers)
+
+  a = <<EOF
+<html>
+<body>
+<table>
+<tr><th>Client</th><th>Host</th><th>Port</th><th>Dead?</th></tr>
+EOF
+  aa = peers.map do |peer|
+    dead = dead_peers.include? peer
+    "<tr><td>#{peer[0]}</td><td>#{peer[1]}</td><td>#{peer[2]}</td><td>#{dead}</td></tr>"
+  end
+  b = <<EOF
+</table>
+
+<table>
+<tr><th>Hash</th><th>Name</th><th>Peers</th></tr>
+EOF
+  bb = torrents.map do |hash, t|
+    "<tr><td>#{hash}</td><td>#{t[:name]}</td><td>#{t[:peers].size}</td></tr>"
+  end
+  c = <<EOF
+</table>
+
+</body>
+</html>
+EOF
+  [a, aa, b, bb, c].flatten.join
+end
