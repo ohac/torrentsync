@@ -52,31 +52,6 @@ end
 get '/' do
   peers = get_peers
   torrents, dead_peers = get_torrents(peers)
-
-  a = <<EOF
-<html>
-<body>
-<table>
-<tr><th>Client</th><th>Host</th><th>Port</th><th>Dead?</th></tr>
-EOF
-  aa = peers.map do |peer|
-    dead = dead_peers.include? peer
-    "<tr><td>#{peer[0]}</td><td>#{peer[1]}</td><td>#{peer[2]}</td><td>#{dead}</td></tr>"
-  end
-  b = <<EOF
-</table>
-
-<table>
-<tr><th>Hash</th><th>Name</th><th>Peers</th></tr>
-EOF
-  bb = torrents.map do |hash, t|
-    "<tr><td>#{hash}</td><td>#{t[:name]}</td><td>#{t[:peers].size}</td></tr>"
-  end
-  c = <<EOF
-</table>
-
-</body>
-</html>
-EOF
-  [a, aa, b, bb, c].flatten.join
+  haml :index, :locals => {
+      :peers => peers, :torrents => torrents, :dead_peers => dead_peers }
 end

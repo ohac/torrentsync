@@ -1,0 +1,27 @@
+%html
+  %head
+    %title torrentsync
+  %body
+    %table
+      %tr
+        %th Client
+        %th Host
+        %th Port
+        %th Dead?
+      - peers.each do |peer|
+        %tr
+          - dead = dead_peers.include? peer
+          %td= peer[0]
+          %td= peer[1]
+          %td= peer[2]
+          %td= dead
+    %table
+      %tr
+        %th Hash
+        %th Name
+        %th Peers
+      - torrents.map do |hash, t|
+        %tr
+          %td= hash
+          %td= t[:name]
+          %td= t[:peers].size
