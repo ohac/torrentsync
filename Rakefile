@@ -5,8 +5,8 @@ begin
   require 'jeweler'
   Jeweler::Tasks.new do |gem|
     gem.name = "torrentsync"
-    gem.summary = %Q{TODO: one-line summary of your gem}
-    gem.description = %Q{TODO: longer description of your gem}
+    gem.summary = %Q{sync torrents with peers}
+    gem.description = %Q{support Transmission and uTorrent}
     gem.email = "ohachige@gmail.com"
     gem.homepage = "http://github.com/ohac/torrentsync"
     gem.authors = ["OHASHI Hideya"]
