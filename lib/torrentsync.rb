@@ -177,9 +177,8 @@ def get_torrents(peers)
       end
     rescue TimeoutError, Errno::ECONNREFUSED
       dead_peers << peer
-      nil
+      next
     end
-    next if tr.nil?
     tr['arguments']['torrents'].each do |t|
       h = t['hashString']
       torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
