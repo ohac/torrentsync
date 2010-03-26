@@ -112,8 +112,10 @@ HOME_DIR = ENV['HOME']
 SETTING_DIR = "#{HOME_DIR}/.torrentsync"
 PEERS_FILE = File.join(SETTING_DIR, 'peers')
 TORRENTS_FILE = File.join(SETTING_DIR, 'torrents')
+CACHE_DIR = File.join(SETTING_DIR, 'cache')
 unless File.exist?(SETTING_DIR)
   FileUtils.mkdir SETTING_DIR
+  FileUtils.mkdir CACHE_DIR
   open(PEERS_FILE, 'w') do |fd|
     fd.puts('transmission localhost 9091')
   end
@@ -164,6 +166,17 @@ def get_peers
   File.open(PEERS_FILE).readlines.map(&:chomp).map(&:split)
 end
 
+def save_to_cache(id, status)
+  File.open(File.join(CACHE_DIR, id), 'w') do |f|
+    f.write(status.to_json)
+  end
+end
+
+def load_from_cache(id)
+  fn = File.join(CACHE_DIR, id)
+  JSON.load(File.read(fn)) if File.exist?(fn)
+end
+
 def get_torrents(peers)
   torrents = {}
   dead_peers = []
@@ -171,14 +184,18 @@ def get_torrents(peers)
     type = peer[0]
     next if type[0, 1] == '#'
     host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+    cache = "#{host}_#{port}"
     tr = begin
       timeout(2) do
         type2class(type).new(host, port, user, pass).list
       end
     rescue TimeoutError, Errno::ECONNREFUSED
       dead_peers << peer
-      next
+      trcache = load_from_cache(cache)
+      next if trcache.nil?
+      trcache
     end
+    save_to_cache(cache, tr)
     tr['arguments']['torrents'].each do |t|
       h = t['hashString']
       torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
