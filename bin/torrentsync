@@ -24,7 +24,7 @@ end
 c = Choice.choices
 if c.sync
   peers = get_peers
-  torrents = get_torrents(peers)
+  torrents, dead_peers = get_torrents(peers)
   sync_torrents(peers, torrents)
 end
 if c.html
