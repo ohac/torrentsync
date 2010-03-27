@@ -224,6 +224,7 @@ def sync_torrents(peers, torrents)
       hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
     end
     dest = dests.shuffle.first
+    next if dest.nil?
     puts "mirroring: %s to %s" % [name, dest.join(',')]
     type = dest[0]
     host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
