@@ -28,7 +28,9 @@ class Transmission
     sessionid = Net::HTTP.start(@host, @port) do |http|
       json = {
         :method => 'torrent-get',
-        :arguments => { :fields => [ :hashString, :id, :name ] }
+        :arguments => {
+          :fields => [ :hashString, :id, :name, :totalSize, :haveValid ]
+        }
       }
       res = http.post('/transmission/rpc', json.to_json, header)
       JSON.parse(res.body)
@@ -77,7 +79,8 @@ class UTorrent
       res = http.request(req)
       result = JSON.parse(res.body)
       transmissionlike = result['torrents'].map do |t|
-        { 'hashString' => t[0].downcase, 'name' => t[2] }
+        { 'hashString' => t[0].downcase, 'name' => t[2],
+          'totalSize' => 1000, 'haveValid' => t[4] }
       end
       { 'arguments' => { 'torrents' => transmissionlike } }
     end
@@ -202,7 +205,8 @@ def get_torrents(peers)
     tr['arguments']['torrents'].each do |t|
       h = t['hashString']
       torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
-      torrents[h][:peers] << [host, port].join(':')
+      ratio = t['haveValid'] ? t['haveValid'] * 1.0 / t['totalSize'] : 0.0
+      torrents[h][:peers] << [[host, port].join(':'), ratio]
     end
   end
   [torrents, dead_peers]
@@ -215,7 +219,7 @@ def sync_torrents(peers, torrents)
     next if hps.size >= 2
     body = find_torrent(name)
     next if body.nil?
-    hps = hps.map{|hp| host, port = hp.split(':'); [host, port.to_i]}
+    hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
     dests = peers.select do |peer|
       hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
     end

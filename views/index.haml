@@ -21,7 +21,8 @@
         %th Name
         %th Peers
       - torrents.map do |hash, t|
+        - total = t[:peers].inject(0.0){|v,h|v + h[1]}
         %tr
           %td= hash
           %td= t[:name]
-          %td= t[:peers].size
+          %td== #{t[:peers].size}(#{(total * 100).to_i}%)

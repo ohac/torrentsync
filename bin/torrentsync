@@ -44,7 +44,8 @@ if c.html
   puts "<table>"
   puts "<tr><th>Hash</th><th>Name</th><th>Peers</th></tr>"
   torrents.each do |hash, t|
-    puts "<tr><td>#{hash}</td><td>#{t[:name]}</td><td>#{t[:peers].size}</td></tr>"
+    total = t[:peers].inject(0.0){|v,h|v + h[1]}
+    puts "<tr><td>#{hash}</td><td>#{t[:name]}</td><td>#{t[:peers].size}(#{(total * 100).to_i}%)</td></tr>"
   end
   puts "</table>"
 
