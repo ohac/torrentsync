@@ -143,7 +143,7 @@ def find_torrent(name)
     uri2 = URI.parse(URI.encode("#{uri.to_s}/#{rp}"))
     rv = case uri2.scheme
         when 'file'
-          open(uri2.path){|f|f.read}
+          open(URI.decode(uri2.path)){|f|f.read}
         when 'http'
           open(uri2){|f|f.read}
         end
