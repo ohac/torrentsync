@@ -140,7 +140,8 @@ def find_torrent(name)
     end
     rp = ts.find{|t| !t.index(name).nil?}
     next if rp.nil?
-    uri2 = URI.parse(URI.encode("#{uri.to_s}/#{rp}"))
+    uri2 = URI.parse(URI.encode("#{uri.to_s}/#{rp}").gsub('[', '%5B').gsub(
+        ']', '%5D'))
     rv = case uri2.scheme
         when 'file'
           open(URI.decode(uri2.path)){|f|f.read}
