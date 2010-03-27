@@ -163,7 +163,8 @@ def type2class(type)
 end
 
 def get_peers
-  File.open(PEERS_FILE).readlines.map(&:chomp).map(&:split)
+  lines = File.open(PEERS_FILE).readlines.select{|s|s[0,1]!='#'}
+  lines.map(&:chomp).map(&:split)
 end
 
 def save_to_cache(id, status)
