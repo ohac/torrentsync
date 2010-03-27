@@ -130,7 +130,8 @@ def find_torrent(name)
   uris.each do |uri|
     ts = case uri.scheme
     when 'file'
-      Dir.glob(File.join(uri.path, '*.torrent')).map{|t|File.basename(t)}
+      fn = File.join(URI.decode(uri.path), '*.torrent')
+      Dir.glob(fn).map{|t|File.basename(t)}
     when 'http'
       body = open(uri).read
       h = Nokogiri::HTML.parse(body)
@@ -140,7 +141,7 @@ def find_torrent(name)
     end
     rp = ts.find{|t| !t.index(name).nil?}
     next if rp.nil?
-    uri2 = URI.parse(URI.encode("#{uri.to_s}/#{rp}").gsub('[', '%5B').gsub(
+    uri2 = URI.parse(("#{uri.to_s}/#{URI.encode(rp)}").gsub('[', '%5B').gsub(
         ']', '%5D'))
     rv = case uri2.scheme
         when 'file'
