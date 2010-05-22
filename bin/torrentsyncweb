@@ -10,7 +10,10 @@ self_file =
 $:.unshift(File.dirname(self_file) + "/../lib")
 
 require 'torrentsync'
+require 'haml'
 require 'sinatra'
+require 'bencode'
+require 'ipaddr'
 
 TORRENTSYNC_HOME = File.dirname(__FILE__) + '/../'
 set :public, TORRENTSYNC_HOME + 'public'
@@ -54,4 +57,19 @@ get '/' do
   torrents, status = get_torrents(peers)
   haml :index, :locals => {
       :peers => peers, :torrents => torrents, :status => status }
+end
+
+get '/announce' do
+  compact = params[:compact] == '1' # TODO
+  peers = get_peers.map do |v|
+    host = v[1]
+    port = v[2].to_i
+    ip = begin
+      IPAddr.new(host)
+    rescue
+      IPAddr.new(Socket::getaddrinfo(host, nil)[0][3])
+    end
+    [ip.to_i, port].pack("Nn")
+  end
+  BEncode.dump({ 'interval' => 5 * 60, 'peers' => peers })
 end

@@ -208,7 +208,7 @@ def get_torrents(peers)
             :cached : :dead
       end
     else
-      status[peer] = :cached
+      status[peer] = :live
     end
     next if tr.nil?
     next if status[peer] == :dead
