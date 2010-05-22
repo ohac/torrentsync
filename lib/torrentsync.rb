@@ -192,7 +192,7 @@ def get_torrents(peers)
     host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
     cache = "#{host}_#{port}"
     tr = load_from_cache(cache)
-    modified = tr['modified']
+    modified = tr && tr['modified']
     now = Time.now.to_i
     if modified.nil? or now >= modified + 60
       begin
