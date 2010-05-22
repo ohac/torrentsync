@@ -24,12 +24,14 @@ end
 c = Choice.choices
 if c.sync
   peers = get_peers
-  torrents, dead_peers = get_torrents(peers)
+  torrents, status = get_torrents(peers)
+  dead_peers = status.select{|k,v| v == :dead}.map(&:first)
   sync_torrents(peers - dead_peers, torrents)
 end
 if c.html
   peers = get_peers
-  torrents, dead_peers = get_torrents(peers)
+  torrents, status = get_torrents(peers)
+  dead_peers = status.select{|k,v| v == :dead}.map(&:first)
   puts "<html>"
   puts "<body>"
 

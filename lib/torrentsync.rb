@@ -185,7 +185,7 @@ end
 
 def get_torrents(peers)
   torrents = {}
-  dead_peers = []
+  status = {}
   peers.each do |peer|
     type = peer[0]
     next if type[0, 1] == '#'
@@ -196,14 +196,19 @@ def get_torrents(peers)
     now = Time.now.to_i
     if modified.nil? or now >= modified + 60
       begin
-        tr = timeout(2) do
+        curtr = timeout(2) do
           type2class(type).new(host, port, user, pass).list
         end
-        tr['modified'] = now
-        save_to_cache(cache, tr)
+        curtr['modified'] = now
+        save_to_cache(cache, curtr)
+        tr = curtr
+        status[peer] = :live
       rescue TimeoutError, Errno::ECONNREFUSED
-        dead_peers << peer
+        status[peer] = (!modified.nil? and now < modified + 24 * 60 * 60) ?
+            :cached : :dead
       end
+    else
+      status[peer] = :cached
     end
     next if tr.nil?
     tr['arguments']['torrents'].each do |t|
@@ -213,7 +218,7 @@ def get_torrents(peers)
       torrents[h][:peers] << [[host, port].join(':'), ratio]
     end
   end
-  [torrents, dead_peers]
+  [torrents, status]
 end
 
 def sync_torrents(peers, torrents)
