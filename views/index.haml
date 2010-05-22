@@ -7,14 +7,13 @@
         %th Client
         %th Host
         %th Port
-        %th Dead?
+        %th Status
       - peers.each do |peer|
         %tr
-          - dead = dead_peers.include? peer
           %td= peer[0]
           %td= peer[1]
           %td= peer[2]
-          %td= dead
+          %td= status[peer]
     %table
       %tr
         %th Hash

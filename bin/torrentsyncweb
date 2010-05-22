@@ -52,7 +52,6 @@ end
 get '/' do
   peers = get_peers
   torrents, status = get_torrents(peers)
-  dead_peers = status.select{|k,v| v == :dead}.map(&:first)
   haml :index, :locals => {
-      :peers => peers, :torrents => torrents, :dead_peers => dead_peers }
+      :peers => peers, :torrents => torrents, :status => status }
 end
