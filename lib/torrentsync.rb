@@ -222,23 +222,31 @@ def get_torrents(peers)
   [torrents, status]
 end
 
+def sync_torrent(peers, t)
+  name = t[:name]
+  hps = t[:peers]
+  return if hps.size >= 2
+  body = find_torrent(name)
+  return if body.nil?
+  hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
+  dests = peers.select do |peer|
+    hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
+  end
+  dest = dests.shuffle.first
+  return if dest.nil?
+  type = dest[0]
+  host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
+  dest = type2class(type).new(host, port, user, pass)
+  dest.add(body)
+  [host, port]
+end
+
 def sync_torrents(peers, torrents)
   torrents.each do |hash, t|
-    name = t[:name]
-    hps = t[:peers]
-    next if hps.size >= 2
-    body = find_torrent(name)
-    next if body.nil?
-    hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
-    dests = peers.select do |peer|
-      hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
-    end
-    dest = dests.shuffle.first
+    dest = sync_torrent(peers, t)
     next if dest.nil?
-    puts "mirroring: %s to %s" % [name, dest.join(',')]
-    type = dest[0]
-    host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
-    dest = type2class(type).new(host, port, user, pass)
-    dest.add(body)
+    name = t[:name]
+    host, port = dest
+    puts "mirroring: %s to %s:%d" % [name, host, port]
   end
 end
