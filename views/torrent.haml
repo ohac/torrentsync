@@ -1,0 +1,30 @@
+%html
+  %head
+    %title== #{infohash} - torrentsync
+    %link{:href => "/style.css", :rel => "stylesheet", :type => "text/css",
+        :media => "screen"}
+  %body
+    - t = torrents[infohash]
+    %h1= t[:name]
+    %ul
+      %li= infohash
+      - total = t[:peers].inject(0.0){|v,h|v + h[1]}
+      - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
+      %li{:class => rep}== #{t[:peers].size}(#{(total * 100).to_i}%)
+    %table
+      %tr
+        %th Client
+        %th Host
+        %th Port
+        %th Status
+        %th Have
+      - peers.each do |peer|
+        %tr
+          %td= peer[0]
+          - hostport = [peer[1], peer[2]].join(':')
+          - p hostport
+          %td= peer[1]
+          %td= peer[2]
+          %td{:class => status[peer]}= status[peer]
+          - st = t[:peers].find{|hp, have| p hp; hostport == hp}
+          %td= '%d%%' % [st.nil? ? 0 : (st[1] * 100).to_i]

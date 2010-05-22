@@ -59,6 +59,13 @@ get '/' do
       :peers => peers, :torrents => torrents, :status => status }
 end
 
+get '/t/:infohash' do
+  peers = get_peers
+  torrents, status = get_torrents(peers)
+  haml :torrent, :locals => { :infohash => params[:infohash], :peers => peers,
+      :torrents => torrents, :status => status }
+end
+
 get '/announce' do
   compact = params[:compact] == '1' # TODO support compact only
   peers = get_peers.map do |v|

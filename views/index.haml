@@ -19,13 +19,12 @@
     %br
     %table
       %tr
-        %th Hash
-        %th Name
         %th Peers
+        %th Name
       - torrents.map do |hash, t|
         - total = t[:peers].inject(0.0){|v,h|v + h[1]}
         - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
         %tr
-          %td= hash
-          %td= t[:name]
           %td{:class => rep}== #{t[:peers].size}(#{(total * 100).to_i}%)
+          %td
+            %a{:href => "/t/#{hash}"}= t[:name]
