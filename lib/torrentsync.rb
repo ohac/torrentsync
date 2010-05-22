@@ -191,17 +191,21 @@ def get_torrents(peers)
     next if type[0, 1] == '#'
     host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
     cache = "#{host}_#{port}"
-    tr = begin
-      timeout(2) do
-        type2class(type).new(host, port, user, pass).list
+    tr = load_from_cache(cache)
+    modified = tr['modified']
+    now = Time.now.to_i
+    if modified.nil? or now >= modified + 60
+      begin
+        tr = timeout(2) do
+          type2class(type).new(host, port, user, pass).list
+        end
+        tr['modified'] = now
+        save_to_cache(cache, tr)
+      rescue TimeoutError, Errno::ECONNREFUSED
+        dead_peers << peer
       end
-    rescue TimeoutError, Errno::ECONNREFUSED
-      dead_peers << peer
-      trcache = load_from_cache(cache)
-      next if trcache.nil?
-      trcache
     end
-    save_to_cache(cache, tr)
+    next if tr.nil?
     tr['arguments']['torrents'].each do |t|
       h = t['hashString']
       torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
