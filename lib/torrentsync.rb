@@ -204,13 +204,14 @@ def get_torrents(peers)
         tr = curtr
         status[peer] = :live
       rescue TimeoutError, Errno::ECONNREFUSED
-        status[peer] = (!modified.nil? and now < modified + 24 * 60 * 60) ?
+        status[peer] = (!modified.nil? and now < modified + 7 * 24 * 60 * 60) ?
             :cached : :dead
       end
     else
       status[peer] = :cached
     end
     next if tr.nil?
+    next if status[peer] == :dead
     tr['arguments']['torrents'].each do |t|
       h = t['hashString']
       torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
