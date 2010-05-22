@@ -1,0 +1,23 @@
+.live {
+  color: #070;
+}
+.cached {
+  color: #770;
+}
+.dead {
+  color: #700;
+}
+.great {
+  color: #070;
+}
+.good {
+  color: #770;
+}
+.poor {
+  color: #f00;
+  background-color: #eee;
+}
+.broken {
+  color: #f00;
+  background-color: #888;
+}

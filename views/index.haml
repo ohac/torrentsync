@@ -1,6 +1,8 @@
 %html
   %head
     %title torrentsync
+    %link{:href => "/style.css", :rel => "stylesheet", :type => "text/css",
+        :media => "screen"}
   %body
     %table
       %tr
@@ -13,7 +15,8 @@
           %td= peer[0]
           %td= peer[1]
           %td= peer[2]
-          %td= status[peer]
+          %td{:class => status[peer]}= status[peer]
+    %br
     %table
       %tr
         %th Hash
@@ -21,7 +24,8 @@
         %th Peers
       - torrents.map do |hash, t|
         - total = t[:peers].inject(0.0){|v,h|v + h[1]}
+        - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
         %tr
           %td= hash
           %td= t[:name]
-          %td== #{t[:peers].size}(#{(total * 100).to_i}%)
+          %td{:class => rep}== #{t[:peers].size}(#{(total * 100).to_i}%)
