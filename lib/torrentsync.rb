@@ -183,6 +183,7 @@ def load_from_cache(id)
   JSON.load(File.read(fn)) if File.exist?(fn)
 end
 
+$failed = {}
 def get_torrents(peers)
   torrents = {}
   status = {}
@@ -196,6 +197,7 @@ def get_torrents(peers)
     now = Time.now.to_i
     if modified.nil? or now >= modified + 60
       begin
+        raise TimeoutError if !$failed[peer].nil? and now < $failed[peer] + 60
         curtr = timeout(2) do
           type2class(type).new(host, port, user, pass).list
         end
@@ -206,6 +208,7 @@ def get_torrents(peers)
       rescue TimeoutError, Errno::ECONNREFUSED
         status[peer] = (!modified.nil? and now < modified + 7 * 24 * 60 * 60) ?
             :cached : :dead
+        $failed[peer] = now
       end
     else
       status[peer] = :live

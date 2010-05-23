@@ -4,6 +4,7 @@
     %link{:href => "/style.css", :rel => "stylesheet", :type => "text/css",
         :media => "screen"}
   %body
+    %a{:href => '/'} Top
     - t = torrents[infohash]
     - dt = find_torrent_by_name(t[:name])
     - dts = "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
@@ -29,5 +30,5 @@
           %td= peer[1]
           %td= peer[2]
           %td{:class => status[peer]}= status[peer]
-          - st = t[:peers].find{|hp, have| p hp; hostport == hp}
+          - st = t[:peers].find{|hp, have| hostport == hp}
           %td= '%d%%' % [st.nil? ? 0 : (st[1] * 100).to_i]
