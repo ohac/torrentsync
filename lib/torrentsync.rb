@@ -6,6 +6,8 @@ require 'timeout'
 require 'fileutils'
 require 'open-uri'
 require 'base64'
+require 'bencode'
+require 'digest/sha1'
 
 class Transmission
   def initialize(host, port, user = nil, pass = nil)
@@ -127,7 +129,7 @@ unless File.exist?(SETTING_DIR)
   end
 end
 
-def find_torrent_by_name(name)
+def find_torrent_by_name(name, hash)
   uris = File.open(TORRENTS_FILE).readlines.map(&:chomp).map{|u| URI.parse(u)}
   rv = nil
   uris.each do |uri|
@@ -152,7 +154,10 @@ def find_torrent_by_name(name)
         when 'http'
           open(uri2){|f|f.read}
         end
-    # TODO need to check info_hash too
+    info = BEncode.load(rv)['info']
+    info_hash = Digest::SHA1.digest(BEncode.dump(info))
+    hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
+    next if hash != hashstr
     break
   end
   rv
@@ -187,6 +192,7 @@ $failed = {}
 def get_torrents(peers)
   torrents = {}
   status = {}
+  # TODO use thread for dead node
   peers.each do |peer|
     type = peer[0]
     next if type[0, 1] == '#'
@@ -225,11 +231,11 @@ def get_torrents(peers)
   [torrents, status]
 end
 
-def sync_torrent(peers, t)
+def sync_torrent(peers, t, hash)
   name = t[:name]
   hps = t[:peers]
   return if hps.size >= 2
-  body = find_torrent_by_name(name)
+  body = find_torrent_by_name(name, hash)
   return if body.nil?
   hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
   dests = peers.select do |peer|
@@ -246,7 +252,7 @@ end
 
 def sync_torrents(peers, torrents)
   torrents.each do |hash, t|
-    dest = sync_torrent(peers, t)
+    dest = sync_torrent(peers, t, hash)
     next if dest.nil?
     name = t[:name]
     host, port = dest

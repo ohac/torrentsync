@@ -6,7 +6,7 @@
   %body
     %a{:href => '/'} Top
     - t = torrents[infohash]
-    - dt = find_torrent_by_name(t[:name])
+    - dt = find_torrent_by_name(t[:name], infohash)
     - dts = "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
     %h1= t[:name]
     %ul
