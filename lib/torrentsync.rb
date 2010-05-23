@@ -127,7 +127,7 @@ unless File.exist?(SETTING_DIR)
   end
 end
 
-def find_torrent(name)
+def find_torrent_by_name(name)
   uris = File.open(TORRENTS_FILE).readlines.map(&:chomp).map{|u| URI.parse(u)}
   rv = nil
   uris.each do |uri|
@@ -226,7 +226,7 @@ def sync_torrent(peers, t)
   name = t[:name]
   hps = t[:peers]
   return if hps.size >= 2
-  body = find_torrent(name)
+  body = find_torrent_by_name(name)
   return if body.nil?
   hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
   dests = peers.select do |peer|

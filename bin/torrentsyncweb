@@ -62,7 +62,9 @@ end
 get '/t/:infohash' do
   peers = get_peers
   torrents, status = get_torrents(peers)
-  haml :torrent, :locals => { :infohash => params[:infohash], :peers => peers,
+  infohash = params[:infohash]
+  t = torrents[infohash]
+  haml :torrent, :locals => { :infohash => infohash, :peers => peers,
       :torrents => torrents, :status => status }
 end
 

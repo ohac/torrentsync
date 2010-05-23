@@ -5,8 +5,12 @@
         :media => "screen"}
   %body
     - t = torrents[infohash]
+    - dt = find_torrent_by_name(t[:name])
+    - dts = "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
     %h1= t[:name]
     %ul
+      %li
+        %a{:href => dts} download
       %li= infohash
       - total = t[:peers].inject(0.0){|v,h|v + h[1]}
       - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
@@ -22,7 +26,6 @@
         %tr
           %td= peer[0]
           - hostport = [peer[1], peer[2]].join(':')
-          - p hostport
           %td= peer[1]
           %td= peer[2]
           %td{:class => status[peer]}= status[peer]
