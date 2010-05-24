@@ -8,6 +8,7 @@ require 'open-uri'
 require 'base64'
 require 'bencode'
 require 'digest/sha1'
+require 'thread'
 
 class Transmission
   def initialize(host, port, user = nil, pass = nil)
@@ -188,12 +189,24 @@ def load_from_cache(id)
   JSON.load(File.read(fn)) if File.exist?(fn)
 end
 
+def parallelmap(es)
+  q = Queue.new
+  ts = es.map do |x|
+    Thread.new(x) do |y|
+      result = yield(y) rescue nil
+      q << [result, Thread.current]
+    end
+  end
+  es.map do
+    result, th = q.pop
+    th.join
+    result
+  end
+end
+
 $failed = {}
 def get_torrents(peers)
-  torrents = {}
-  status = {}
-  # TODO use thread for dead node
-  peers.each do |peer|
+  trs = parallelmap(peers) do |peer|
     type = peer[0]
     next if type[0, 1] == '#'
     host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
@@ -201,6 +214,7 @@ def get_torrents(peers)
     tr = load_from_cache(cache)
     modified = tr && tr['modified']
     now = Time.now.to_i
+    st = :live
     if modified.nil? or now >= modified + 60
       begin
         raise TimeoutError if !$failed[peer].nil? and now < $failed[peer] + 60
@@ -210,17 +224,21 @@ def get_torrents(peers)
         curtr['modified'] = now
         save_to_cache(cache, curtr)
         tr = curtr
-        status[peer] = :live
       rescue TimeoutError, Errno::ECONNREFUSED
-        status[peer] = (!modified.nil? and now < modified + 7 * 24 * 60 * 60) ?
+        st = (!modified.nil? and now < modified + 7 * 24 * 60 * 60) ?
             :cached : :dead
         $failed[peer] = now
       end
-    else
-      status[peer] = :live
     end
     next if tr.nil?
-    next if status[peer] == :dead
+    [peer, st, st == :dead ? nil : tr]
+  end
+  torrents = {}
+  status = {}
+  trs.compact.each do |peer, st, tr|
+    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+    status[peer] = st
+    next if tr.nil?
     tr['arguments']['torrents'].each do |t|
       h = t['hashString']
       torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
