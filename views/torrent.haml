@@ -7,11 +7,12 @@
     %a{:href => '/'} Top
     - t = torrents[infohash]
     - dt = find_torrent_by_name(t[:name], infohash)
-    - dts = "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
+    - dts = dt.nil? ? nil : "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
     %h1= t[:name]
     %ul
-      %li
-        %a{:href => dts} download
+      - unless dts.nil?
+        %li
+          %a{:href => dts} download
       %li= infohash
       - total = t[:peers].inject(0.0){|v,h|v + h[1]}
       - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
