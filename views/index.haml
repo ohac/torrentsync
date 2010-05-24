@@ -11,10 +11,11 @@
         %th Port
         %th Status
       - peers.each do |peer|
+        - path = peer[0] == 'utorrent' ? 'gui' : ''
         %tr
           %td= peer[0]
           %td
-            %a{:href => "http://#{peer[1]}:#{peer[2]}"}= peer[1]
+            %a{:href => "http://#{peer[1]}:#{peer[2]}/#{path}"}= peer[1]
           %td= peer[2]
           %td{:class => status[peer]}= status[peer]
     %br
