@@ -230,7 +230,6 @@ def get_torrents(peers)
         $failed[peer] = now
       end
     end
-    next if tr.nil?
     [peer, st, st == :dead ? nil : tr]
   end
   torrents = {}
