@@ -68,6 +68,16 @@ get '/t/:infohash' do
       :torrents => torrents, :status => status }
 end
 
+get '/r/:infohash' do
+  peers = get_peers
+  torrents, status = get_torrents(peers)
+  infohash = params[:infohash]
+  rep = params[:rep].to_i
+  t = torrents[infohash]
+  sync_torrent(peers, t, infohash, rep)
+  redirect "/t/#{infohash}"
+end
+
 get '/announce' do
   compact = params[:compact] == '1' # TODO support compact only
   peers = get_peers.map do |v|

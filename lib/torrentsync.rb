@@ -248,10 +248,10 @@ def get_torrents(peers)
   [torrents, status]
 end
 
-def sync_torrent(peers, t, hash)
+def sync_torrent(peers, t, hash, rep)
   name = t[:name]
   hps = t[:peers]
-  return if hps.size >= 2
+  return if hps.size >= rep
   body = find_torrent_by_name(name, hash)
   return if body.nil?
   hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
@@ -269,7 +269,7 @@ end
 
 def sync_torrents(peers, torrents)
   torrents.each do |hash, t|
-    dest = sync_torrent(peers, t, hash)
+    dest = sync_torrent(peers, t, hash, 2)
     next if dest.nil?
     name = t[:name]
     host, port = dest

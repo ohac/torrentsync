@@ -13,6 +13,11 @@
       - unless dts.nil?
         %li
           %a{:href => dts} download
+        %li
+          replicate
+          %a{:href => "/r/#{infohash}?rep=2"} [2]
+          %a{:href => "/r/#{infohash}?rep=3"} [3]
+          %a{:href => "/r/#{infohash}?rep=4"} [4]
       %li= infohash
       - total = t[:peers].inject(0.0){|v,h|v + h[1]}
       - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
