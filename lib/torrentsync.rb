@@ -256,7 +256,7 @@ def sync_torrent(peers, t, hash, rep)
   return if body.nil?
   hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
   dests = peers.select do |peer|
-    hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
+    hps.all?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
   end
   count = rep - hps.size
   dests = dests.shuffle.take(count)
