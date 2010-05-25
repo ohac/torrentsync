@@ -258,21 +258,26 @@ def sync_torrent(peers, t, hash, rep)
   dests = peers.select do |peer|
     hps.any?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
   end
-  dest = dests.shuffle.first
-  return if dest.nil?
-  type = dest[0]
-  host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
-  dest = type2class(type).new(host, port, user, pass)
-  dest.add(body)
-  [host, port]
+  count = rep - hps.size
+  dests = dests.shuffle.take(count)
+  return if dests.empty?
+  dests.map do |dest|
+    type = dest[0]
+    host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
+    dest = type2class(type).new(host, port, user, pass)
+    dest.add(body)
+    [host, port]
+  end
 end
 
-def sync_torrents(peers, torrents)
+def sync_torrents(peers, torrents, rep)
   torrents.each do |hash, t|
-    dest = sync_torrent(peers, t, hash, 2)
-    next if dest.nil?
+    dests = sync_torrent(peers, t, hash, rep)
+    next if dests.nil?
     name = t[:name]
-    host, port = dest
-    puts "mirroring: %s to %s:%d" % [name, host, port]
+    dests.each do |dest|
+      host, port = dest
+      puts "mirroring: %s to %s:%d" % [name, host, port]
+    end
   end
 end

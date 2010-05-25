@@ -15,9 +15,8 @@
           %a{:href => dts} download
         %li
           replicate
-          %a{:href => "/r/#{infohash}?rep=2"} [2]
-          %a{:href => "/r/#{infohash}?rep=3"} [3]
-          %a{:href => "/r/#{infohash}?rep=4"} [4]
+          - (2..9).each do |r|
+            %a{:href => "/r/#{infohash}?rep=#{r}"}== [#{r}]
       %li= infohash
       - total = t[:peers].inject(0.0){|v,h|v + h[1]}
       - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great

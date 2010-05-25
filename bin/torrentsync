@@ -26,7 +26,7 @@ if c.sync
   peers = get_peers
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
-  sync_torrents(peers - dead_peers, torrents)
+  sync_torrents(peers - dead_peers, torrents, 2)
 end
 if c.html
   peers = get_peers
