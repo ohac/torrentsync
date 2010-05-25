@@ -258,16 +258,21 @@ def sync_torrent(peers, t, hash, rep)
   dests = peers.select do |peer|
     hps.all?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
   end
+  # TODO remove dead peers
   count = rep - hps.size
   dests = dests.shuffle.take(count)
   return if dests.empty?
-  dests.map do |dest|
+  rv = dests.map do |dest|
     type = dest[0]
     host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
     dest = type2class(type).new(host, port, user, pass)
-    dest.add(body)
-    [host, port]
+    begin
+      dest.add(body)
+      [host, port]
+    rescue
+    end
   end
+  rv.compact
 end
 
 def sync_torrents(peers, torrents, rep)
