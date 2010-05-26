@@ -1,0 +1,21 @@
+%html
+  %head
+    %title upload - torrentsync
+    %link{:href => "/style.css", :rel => "stylesheet", :type => "text/css",
+        :media => "screen"}
+  %body
+    %form{:action => '/upload', :method => 'post',
+        :enctype => 'multipart/form-data'}
+      %input{:type => 'file', :name => 'file', :size => 40}
+      %br
+      %br
+      %label{:for => 'tracker1'} Tracker
+      %br
+      %input#tracker1{:type => 'text', :name => 'tracker', :size => 40}
+      %br
+      %br
+      %input#private1{:type => 'checkbox', :name => 'private'}
+      %label{:for => 'private1'} Private
+      %br
+      %br
+      %input{:type => 'submit', :value => 'Upload'}

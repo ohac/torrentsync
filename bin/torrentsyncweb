@@ -14,6 +14,10 @@ require 'haml'
 require 'sinatra'
 require 'bencode'
 require 'ipaddr'
+require 'nkf'
+require 'shellwords'
+require 'fileutils'
+require 'digest/sha1'
 
 TORRENTSYNC_HOME = File.dirname(__FILE__) + '/../'
 set :public, TORRENTSYNC_HOME + 'public'
@@ -76,6 +80,60 @@ get '/r/:infohash' do
   t = torrents[infohash]
   sync_torrent(peers, t, infohash, rep)
   redirect "/t/#{infohash}"
+end
+
+get '/upload' do
+  haml :upload
+end
+
+post '/upload' do
+  f = params[:file]
+  announce = params[:tracker]
+  priv = !params[:private].nil?
+  redirect '/upload' if f.nil? # TODO error
+  path = f[:tempfile].path
+  origname = f[:filename]
+  origname = NKF.nkf("-w", origname) # TODO i18n
+  name = origname.tr(" ", "_")
+  name = Shellwords.escape(name)
+  FileUtils.mkdir_p('data')
+  dest = "data/#{name}"
+  redirect '/upload' if File.exist?(dest) # TODO error
+  FileUtils.mv(path, dest)
+  torrent_piece_size = 2 ** 18
+  torrent_pieces = []
+  piece = ''
+  File.open(dest, 'rb') do |fd|
+    loop do
+      data = fd.read(torrent_piece_size - piece.size)
+      break if data.nil?
+      piece << data
+      if piece.size == torrent_piece_size
+        torrent_pieces << Digest::SHA1.digest(piece)
+        piece = ''
+      end
+    end
+  end
+  if piece.size > 0
+    torrent_pieces << Digest::SHA1.digest(piece)
+  end
+  torrent = {
+    'announce' => announce,
+    'created by' => 'torrentsync 0.0.0',
+    'creation date' => Time.now.to_i,
+    'info' => {
+      'length' => torrent_piece_size * (torrent_pieces.size - 1) + piece.size,
+      'name' => origname,
+      'private' => priv ? 1 : 0,
+      'pieces' => torrent_pieces.join,
+      'piece length' => torrent_piece_size,
+    }
+  }
+  File.open("data/#{name}.torrent", "wb") do |fd|
+    fd.write(BEncode.dump(torrent))
+  end
+  # TODO push torrent and data
+  redirect '/upload' # TODO success
 end
 
 get '/announce' do
