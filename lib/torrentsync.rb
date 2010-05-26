@@ -115,23 +115,38 @@ EOF
 end
 
 HOME_DIR = ENV['HOME']
-SETTING_DIR = "#{HOME_DIR}/.torrentsync"
-PEERS_FILE = File.join(SETTING_DIR, 'peers')
-TORRENTS_FILE = File.join(SETTING_DIR, 'torrents')
+SETTING_DIR = File.join(HOME_DIR, '.torrentsync')
+SETTING_FILE = File.join(SETTING_DIR, 'settings.yaml')
 CACHE_DIR = File.join(SETTING_DIR, 'cache')
 unless File.exist?(SETTING_DIR)
   FileUtils.mkdir SETTING_DIR
   FileUtils.mkdir CACHE_DIR
-  open(PEERS_FILE, 'w') do |fd|
-    fd.puts('transmission localhost 9091')
-  end
-  open(TORRENTS_FILE, 'w') do |fd|
-    fd.puts("file:#{HOME_DIR}/.config/transmission/torrents")
+end
+unless File.exist?(SETTING_FILE)
+  open(SETTING_FILE, 'w') do |fd|
+    setting = {
+      'peers' => [
+        {
+          'nick' => 'local',
+          'client' => 'transmission',
+          'host' => 'localhost',
+          'port' => 9091,
+          'username' => '',
+          'password' => ''
+        }
+      ],
+      'torrents' => [
+        "file:#{HOME_DIR}/.config/transmission/torrents"
+      ]
+    }
+    fd.puts(YAML.dump(setting))
   end
 end
 
+SETTING = YAML.load(File.read(SETTING_FILE))
+
 def find_torrent_by_name(name, hash)
-  uris = File.open(TORRENTS_FILE).readlines.map(&:chomp).map{|u| URI.parse(u)}
+  uris = SETTING['torrents'].map{|u| URI.parse(u)}
   rv = nil
   uris.each do |uri|
     ts = case uri.scheme
@@ -174,8 +189,13 @@ def type2class(type)
 end
 
 def get_peers
-  lines = File.open(PEERS_FILE).readlines.select{|s|s[0,1]!='#'}
-  lines.map(&:chomp).map(&:split)
+  SETTING['peers'].map do |i|
+    vs = ['client', 'host', 'port', 'username', 'password'].map do |j|
+      v = i[j]
+      v.size == '' ? nil : v
+    end
+    vs.compact
+  end
 end
 
 def save_to_cache(id, status)
