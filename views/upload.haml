@@ -6,7 +6,9 @@
   %body
     %form{:action => '/upload', :method => 'post',
         :enctype => 'multipart/form-data'}
-      %input{:type => 'file', :name => 'file', :size => 40}
+      %label{:for => 'file1'} Upload File
+      %br
+      %input#file1{:type => 'file', :name => 'file', :size => 40}
       %br
       %br
       %label{:for => 'tracker1'} Tracker
