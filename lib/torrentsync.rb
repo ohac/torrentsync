@@ -137,7 +137,11 @@ unless File.exist?(SETTING_FILE)
       ],
       'torrents' => [
         "file:#{HOME_DIR}/.config/transmission/torrents"
-      ]
+      ],
+      'local' => {
+        'download' => "#{HOME_DIR}/Downloads",
+        'torrents' => "#{SETTING_DIR}/torrents.d",
+      }
     }
     fd.puts(YAML.dump(setting))
   end

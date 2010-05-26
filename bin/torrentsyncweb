@@ -87,6 +87,8 @@ get '/upload' do
 end
 
 post '/upload' do
+  download = SETTING['local']['download']
+  torrents = SETTING['local']['torrents']
   f = params[:file]
   announce = params[:tracker]
   priv = !params[:private].nil?
@@ -96,8 +98,7 @@ post '/upload' do
   origname = NKF.nkf("-w", origname) # TODO i18n
   name = origname.tr(" ", "_")
   name = Shellwords.escape(name)
-  FileUtils.mkdir_p('data')
-  dest = "data/#{name}"
+  dest = "#{download}/#{name}"
   redirect '/upload' if File.exist?(dest) # TODO error
   FileUtils.mv(path, dest)
   torrent_piece_size = 2 ** 18
@@ -129,7 +130,7 @@ post '/upload' do
       'piece length' => torrent_piece_size,
     }
   }
-  File.open("data/#{name}.torrent", "wb") do |fd|
+  File.open("#{torrents}/#{name}.torrent", "wb") do |fd|
     fd.write(BEncode.dump(torrent))
   end
   # TODO push torrent and data
