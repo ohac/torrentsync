@@ -83,7 +83,8 @@ get '/r/:infohash' do
 end
 
 get '/upload' do
-  haml :upload
+  tracker = SETTING['local']['tracker']
+  haml :upload, :locals => { :tracker => tracker }
 end
 
 post '/upload' do

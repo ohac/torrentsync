@@ -8,15 +8,16 @@
         :enctype => 'multipart/form-data'}
       %label{:for => 'file1'} Upload File
       %br
-      %input#file1{:type => 'file', :name => 'file', :size => 40}
+      %input#file1{:type => 'file', :name => 'file', :size => 60}
       %br
       %br
       %label{:for => 'tracker1'} Tracker
       %br
-      %input#tracker1{:type => 'text', :name => 'tracker', :size => 40}
+      %input#tracker1{:type => 'text', :name => 'tracker', :size => 60,
+          :value => tracker}
       %br
       %br
-      %input#private1{:type => 'checkbox', :name => 'private'}
+      %input#private1{:type => 'checkbox', :name => 'private', :checked => true}
       %label{:for => 'private1'} Private
       %br
       %br

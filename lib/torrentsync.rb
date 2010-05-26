@@ -141,7 +141,8 @@ unless File.exist?(SETTING_FILE)
       'local' => {
         'download' => "#{HOME_DIR}/Downloads",
         'torrents' => "#{SETTING_DIR}/torrents.d",
-        'peer' => 'localpeer'
+        'peer' => 'localpeer',
+        'tracker' => 'http://localhost:4567/announce'
       }
     }
     fd.puts(YAML.dump(setting))
