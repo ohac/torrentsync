@@ -130,10 +130,21 @@ post '/upload' do
       'piece length' => torrent_piece_size,
     }
   }
+  body = BEncode.dump(torrent)
   File.open("#{torrents}/#{name}.torrent", "wb") do |fd|
-    fd.write(BEncode.dump(torrent))
+    fd.write(body)
   end
-  # TODO push torrent and data
+  nick = SETTING['local']['peer']
+  localpeer = SETTING['peers'].find{|peer| peer['nick'] == nick}
+  type = localpeer['client']
+  host = localpeer['host']
+  port = localpeer['port']
+  user = localpeer['username']
+  pass = localpeer['password']
+  user = nil if user == ''
+  pass = nil if pass == ''
+  dest = type2class(type).new(host, port, user, pass)
+  dest.add(body)
   redirect '/upload' # TODO success
 end
 

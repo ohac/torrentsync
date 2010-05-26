@@ -127,7 +127,7 @@ unless File.exist?(SETTING_FILE)
     setting = {
       'peers' => [
         {
-          'nick' => 'local',
+          'nick' => 'localpeer',
           'client' => 'transmission',
           'host' => 'localhost',
           'port' => 9091,
@@ -141,6 +141,7 @@ unless File.exist?(SETTING_FILE)
       'local' => {
         'download' => "#{HOME_DIR}/Downloads",
         'torrents' => "#{SETTING_DIR}/torrents.d",
+        'peer' => 'localpeer'
       }
     }
     fd.puts(YAML.dump(setting))
