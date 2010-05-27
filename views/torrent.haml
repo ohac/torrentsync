@@ -6,13 +6,19 @@
   %body
     %a{:href => '/'} Top
     - t = torrents[infohash]
-    - dt = find_torrent_by_name(t[:name], infohash)
+    - name = t[:name]
+    - dt = find_torrent_by_name(name, infohash)
     - dts = dt.nil? ? nil : "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
     %h1= t[:name]
     %ul
+      - webseeds.each do |webseed|
+        - webseed.chomp!('/')
+        - u = URI.parse(webseed)
+        %li
+          %a{:href => webseed + '/' + name}== Download from #{u.host}
       - unless dts.nil?
         %li
-          %a{:href => dts} download
+          %a{:href => dts} Download torrent
         %li
           replicate
           - (2..9).each do |r|

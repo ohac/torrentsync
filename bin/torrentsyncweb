@@ -68,8 +68,17 @@ get '/t/:infohash' do
   torrents, status = get_torrents(peers)
   infohash = params[:infohash]
   t = torrents[infohash]
+  name = t[:name]
+  webseeds = SETTING['webseeds'].select do |url|
+    u = URI.parse(url)
+    code = Net::HTTP.start(u.host, u.port) do |http|
+      res = http.head("#{u.path.chomp('/')}/#{name}")
+      res.code.to_i
+    end
+    code / 100 == 2
+  end
   haml :torrent, :locals => { :infohash => infohash, :peers => peers,
-      :torrents => torrents, :status => status }
+      :torrents => torrents, :status => status, :webseeds => webseeds }
 end
 
 get '/r/:infohash' do

@@ -143,7 +143,8 @@ unless File.exist?(SETTING_FILE)
         'torrents' => "#{SETTING_DIR}/torrents.d",
         'peer' => 'localpeer',
         'tracker' => 'http://localhost:4567/announce'
-      }
+      },
+      'webseeds' => [ 'http://example.com/' ],
     }
     fd.puts(YAML.dump(setting))
   end
