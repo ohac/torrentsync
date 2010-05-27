@@ -112,6 +112,7 @@ post '/upload' do
   dest = "#{download}/#{name}"
   redirect '/upload' if File.exist?(dest) # TODO error
   FileUtils.mv(path, dest)
+  FileUtils.chmod(0644, dest)
   torrent_piece_size = 2 ** 18
   torrent_pieces = []
   piece = ''
