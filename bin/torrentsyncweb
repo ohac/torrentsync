@@ -64,8 +64,9 @@ get '/' do
 end
 
 get '/t/:infohash' do
+  usecache = params[:cache] != 'false'
   peers = get_peers
-  torrents, status = get_torrents(peers)
+  torrents, status = get_torrents(peers, usecache)
   infohash = params[:infohash]
   t = torrents[infohash]
   name = t[:name]
@@ -155,7 +156,8 @@ post '/upload' do
   pass = nil if pass == ''
   dest = type2class(type).new(host, port, user, pass)
   dest.add(body)
-  redirect '/upload' # TODO success
+  info_hash = Digest::SHA1.hexdigest(BEncode.dump(torrent['info']))
+  redirect "/t/#{info_hash}?cache=false"
 end
 
 get '/announce' do

@@ -232,7 +232,7 @@ def parallelmap(es)
 end
 
 $failed = {}
-def get_torrents(peers)
+def get_torrents(peers, usecache = true)
   trs = parallelmap(peers) do |peer|
     type = peer[0]
     next if type[0, 1] == '#'
@@ -242,7 +242,7 @@ def get_torrents(peers)
     modified = tr && tr['modified']
     now = Time.now.to_i
     st = :live
-    if modified.nil? or now >= modified + 60
+    if !usecache or modified.nil? or now >= modified + 60
       begin
         raise TimeoutError if !$failed[peer].nil? and now < $failed[peer] + 60
         curtr = timeout(2) do
