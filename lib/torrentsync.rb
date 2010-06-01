@@ -132,7 +132,9 @@ unless File.exist?(SETTING_FILE)
           'host' => 'localhost',
           'port' => 9091,
           'username' => '',
-          'password' => ''
+          'password' => '',
+          'limit' => '10MB',
+          'size' => '10GB',
         }
       ],
       'torrents' => [
@@ -205,6 +207,12 @@ def get_peers
   end
 end
 
+def find_peer_setting(host, port)
+  SETTING['peers'].find do |i|
+    i['host'] == host and i['port'].to_i == port
+  end
+end
+
 def save_to_cache(id, status)
   File.open(File.join(CACHE_DIR, id), 'w') do |f|
     f.write(status.to_json)
@@ -267,7 +275,10 @@ def get_torrents(peers, usecache = true)
     next if tr.nil?
     tr['arguments']['torrents'].each do |t|
       h = t['hashString']
-      torrents[h] = { :name => t['name'], :peers => [] } unless torrents.key?(h)
+      unless torrents.key?(h)
+        torrents[h] = { :name => t['name'], :peers => [],
+            :size => t['totalSize'] }
+      end
       ratio = t['haveValid'] ? t['haveValid'] * 1.0 / t['totalSize'] : 0.0
       torrents[h][:peers] << [[host, port].join(':'), ratio]
     end
@@ -275,15 +286,37 @@ def get_torrents(peers, usecache = true)
   [torrents, status]
 end
 
+def parse_size(str)
+  size = str.to_i
+  if str.index('T')
+    size * (1024 ** 4)
+  elsif str.index('G')
+    size * (1024 ** 3)
+  elsif str.index('M')
+    size * (1024 ** 2)
+  elsif str.index('K')
+    size * 1024
+  else
+    size
+  end
+end
+
 def sync_torrent(peers, t, hash, rep)
   name = t[:name]
   hps = t[:peers]
+  tsize = t[:size]
   return if hps.size >= rep
   body = find_torrent_by_name(name, hash)
   return if body.nil?
   hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
   dests = peers.select do |peer|
-    hps.all?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
+    hps.all?{|hp| peer[1] != hp[0] || peer[2] != hp[1]}
+  end
+  dests = dests.select do |peer|
+    setting = find_peer_setting(peer[1], peer[2])
+    next if setting.nil?
+    limit = setting['limit']
+    tsize < parse_size(limit) rescue nil
   end
   count = rep - hps.size
   dests = dests.shuffle.take(count)
