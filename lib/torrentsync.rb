@@ -319,7 +319,23 @@ def sync_torrent(peers, t, hash, rep)
     tsize < parse_size(limit) rescue nil
   end
   count = rep - hps.size
-  dests = dests.shuffle.take(count)
+  dests2 = dests.map do |peer|
+    setting = find_peer_setting(peer[1], peer[2])
+    next if setting.nil?
+    size = setting['size']
+    [(parse_size(size) rescue 1), peer]
+  end
+  dests = count.times.map do
+    total = dests2.inject(0){|t,i|t+i[0]}
+    dice = rand * total.to_f
+    winner = dests2.find do |item|
+      dice -= item[0]
+      dice < 0
+    end
+    dests2 -= [winner]
+    winner[1]
+  end
+  dests.compact!
   return if dests.empty?
   rv = dests.map do |dest|
     type = dest[0]
