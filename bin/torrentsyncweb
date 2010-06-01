@@ -85,10 +85,11 @@ end
 get '/r/:infohash' do
   peers = get_peers
   torrents, status = get_torrents(peers)
+  dead_peers = status.select{|k,v| v == :dead}.map(&:first)
   infohash = params[:infohash]
   rep = params[:rep].to_i
   t = torrents[infohash]
-  sync_torrent(peers, t, infohash, rep)
+  sync_torrent(peers - dead_peers, t, infohash, rep)
   redirect "/t/#{infohash}"
 end
 

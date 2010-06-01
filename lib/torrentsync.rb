@@ -285,7 +285,6 @@ def sync_torrent(peers, t, hash, rep)
   dests = peers.select do |peer|
     hps.all?{|hp| peer[1] != hp[0] && peer[2] != hp[1]}
   end
-  # TODO remove dead peers
   count = rep - hps.size
   dests = dests.shuffle.take(count)
   return if dests.empty?
