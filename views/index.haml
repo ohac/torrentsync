@@ -26,7 +26,7 @@
       %tr
         %th Peers
         %th Name
-      - torrents.map do |hash, t|
+      - torrents.sort_by{|hsh, tr| tr[:name]}.each do |hash, t|
         - total = t[:peers].inject(0.0){|v,h|v + h[1]}
         - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
         %tr
