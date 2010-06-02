@@ -75,14 +75,8 @@ get '/' do
       :peers => peers, :torrents => torrents, :status => status }
 end
 
-get '/t/:infohash' do
-  usecache = params[:cache] != 'false'
-  peers = get_peers
-  torrents, status = get_torrents(peers, usecache)
-  infohash = params[:infohash]
-  t = torrents[infohash]
-  name = t[:name]
-  webseeds = SETTING['webseeds'].select do |url|
+def geturllist(name)
+  SETTING['webseeds'].select do |url|
     u = URI.parse(url)
     code = Net::HTTP.start(u.host, u.port) do |http|
       res = http.head("#{u.path.chomp('/')}/#{name}")
@@ -90,6 +84,16 @@ get '/t/:infohash' do
     end
     code / 100 == 2
   end
+end
+
+get '/t/:infohash' do
+  usecache = params[:cache] != 'false'
+  peers = get_peers
+  torrents, status = get_torrents(peers, usecache)
+  infohash = params[:infohash]
+  t = torrents[infohash]
+  name = t[:name]
+  webseeds = geturllist(name)
   haml :torrent, :locals => { :infohash => infohash, :peers => peers,
       :torrents => torrents, :status => status, :webseeds => webseeds }
 end
