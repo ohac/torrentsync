@@ -151,6 +151,7 @@ post '/upload' do
     'announce' => announce,
     'created by' => 'torrentsync 0.0.0',
     'creation date' => Time.now.to_i,
+    'url-list' => SETTING['webseeds'].map{|ws|ws.chomp('/') + '/'},
     'info' => {
       'length' => torrent_piece_size * (torrent_pieces.size - 1) + piece.size,
       'name' => origname,
