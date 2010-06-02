@@ -25,11 +25,13 @@
     %table
       %tr
         %th Peers
+        %th Size
         %th Name
       - torrents.sort_by{|hsh, tr| tr[:name]}.each do |hash, t|
         - total = t[:peers].inject(0.0){|v,h|v + h[1]}
         - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
         %tr
           %td{:class => rep}== #{t[:peers].size}(#{(total * 100).to_i}%)
+          %td{:class => :size}= sizestr(t[:size])
           %td
             %a{:href => "/t/#{hash}"}= t[:name]

@@ -34,6 +34,18 @@ helpers do
     haml(template, options)
   end
 
+  def sizestr(size)
+    if size < 1024
+      "%d B" % size
+    elsif size < 1024 ** 2
+      "%d KB" % (size / 1024)
+    elsif size < 1024 ** 3
+      "%d MB" % (size / (1024 ** 2))
+    else
+      "%d GB" % (size / (1024 ** 3))
+    end
+  end
+
 end
 
 CONTENT_TYPES = {

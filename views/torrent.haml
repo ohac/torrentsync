@@ -26,6 +26,7 @@
       %li= infohash
       - total = t[:peers].inject(0.0){|v,h|v + h[1]}
       - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
+      %li= sizestr(t[:size])
       %li{:class => rep}== #{t[:peers].size}(#{(total * 100).to_i}%)
     %table
       %tr
