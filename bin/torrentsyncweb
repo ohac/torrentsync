@@ -15,7 +15,6 @@ require 'sinatra'
 require 'bencode'
 require 'ipaddr'
 require 'nkf'
-require 'shellwords'
 require 'fileutils'
 require 'digest/sha1'
 
@@ -125,8 +124,8 @@ post '/upload' do
   origname = f[:filename]
   origname = NKF.nkf("-w", origname) # TODO i18n
   name = origname.tr(" ", "_")
-  name = Shellwords.escape(name)
-  dest = "#{download}/#{name}"
+  name = File.basename(name)
+  dest = File.join(download, name)
   redirect '/upload' if File.exist?(dest) # TODO error
   FileUtils.mv(path, dest)
   FileUtils.chmod(0644, dest)
