@@ -37,11 +37,11 @@ helpers do
     if size < 1024
       "%d B" % size
     elsif size < 1024 ** 2
-      "%d KB" % (size / 1024)
+      "%3.1f KB" % (size / 1024.0)
     elsif size < 1024 ** 3
-      "%d MB" % (size / (1024 ** 2))
+      "%3.1f MB" % (size / (1024.0 ** 2))
     else
-      "%d GB" % (size / (1024 ** 3))
+      "%3.1f GB" % (size / (1024.0 ** 3))
     end
   end
 
