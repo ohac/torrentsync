@@ -9,6 +9,10 @@ require 'base64'
 require 'bencode'
 require 'digest/sha1'
 require 'thread'
+require 'socket'
+require 'openssl'
+require 'zlib'
+require 'rencode'
 
 class Transmission
   def initialize(host, port, user = nil, pass = nil)
@@ -114,6 +118,57 @@ EOF
   end
 end
 
+class Deluge
+  def initialize(host, port, user = nil, pass = nil)
+    @host = host
+    @port = port
+    @user = user
+    @pass = pass
+  end
+
+  def exec(command)
+    soc = TCPSocket.new(@host, @port)
+    context = OpenSSL::SSL::SSLContext.new('SSLv3')
+    ssl = OpenSSL::SSL::SSLSocket.new(soc, context)
+    ssl.connect
+
+    cmd = REncode.dump([[1, 'daemon.login', [@user, @pass], {}]] + [command])
+    ssl.write(Zlib::Deflate.deflate(cmd))
+    gz = Zlib::Inflate.new
+    while !gz.finished?
+      gz << ('%c' % ssl.readchar)
+    end
+    result = REncode.load(gz.finish)
+    raise result if result != [1, 1, 10]
+
+    gz = Zlib::Inflate.new
+    while !gz.finished?
+      gz << ('%c' % ssl.readchar)
+    end
+    result = REncode.load(gz.finish)
+    raise result if result[0] != 1
+
+    ssl.close
+    soc.close
+    result
+  end
+
+  def list
+    result = exec([2, 'core.get_torrents_status', [{}, {}], {}])
+    transmissionlike = result[2].map do |k, v|
+      { 'hashString' => k, 'name' => v['name'],
+        'totalSize' => 1000, 'haveValid' => (v['progress'] * 10).to_i }
+    end
+    { 'arguments' => { 'torrents' => transmissionlike } }
+  end
+
+  def add(torrent)
+    filename = BEncode.load(torrent)['info']['name'] + '.torrent'
+    filedump = Base64.encode64(torrent).split.join
+    exec([2, 'core.add_torrent_file', [filename, filedump, {}], {}])
+  end
+end
+
 HOME_DIR = ENV['HOME']
 SETTING_DIR = File.join(HOME_DIR, '.torrentsync')
 SETTING_FILE = File.join(SETTING_DIR, 'settings.yaml')
@@ -194,6 +249,8 @@ def type2class(type)
     Transmission
   when 'utorrent'
     UTorrent
+  when 'deluge'
+    Deluge
   end
 end
 
