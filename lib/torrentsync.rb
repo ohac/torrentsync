@@ -136,14 +136,14 @@ class Deluge
     ssl.write(Zlib::Deflate.deflate(cmd))
     gz = Zlib::Inflate.new
     while !gz.finished?
-      gz << ('%c' % ssl.readchar)
+      gz << ('%c' % ssl.readchar.ord)
     end
     result = REncode.load(gz.finish)
     raise result if result != [1, 1, 10]
 
     gz = Zlib::Inflate.new
     while !gz.finished?
-      gz << ('%c' % ssl.readchar)
+      gz << ('%c' % ssl.readchar.ord)
     end
     result = REncode.load(gz.finish)
     raise result if result[0] != 1

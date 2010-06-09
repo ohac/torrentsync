@@ -57,10 +57,10 @@ CONTENT_TYPES = {
 
 before do
   request_uri = case request.env['REQUEST_URI']
-    when /\.css$/ : :css
-    when /\.js$/ : :js
-    when /\.yaml$/ : :txt
-    when /\.txt$/ : :txt
+    when /\.css$/ ; :css
+    when /\.js$/ ; :js
+    when /\.yaml$/ ; :txt
+    when /\.txt$/ ; :txt
     else :html
   end
   content_type CONTENT_TYPES[request_uri], :charset => 'utf-8'
