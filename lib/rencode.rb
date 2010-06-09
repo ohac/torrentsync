@@ -55,6 +55,8 @@ module REncode
   INT_NEG_FIXED_START = 70
   INT_NEG_FIXED_COUNT = 32
 
+  LITTLE_ENDIAN = [1].pack('s') == "\001\000"
+
   decode_int = lambda do |x, f|
     f += 1
     newf = x.index(CHR_TERM, f)
@@ -75,32 +77,36 @@ module REncode
 
   decode_inth = lambda do |x, f|
     f += 1
-    [x[f, 2].unpack('n').pack('s').unpack('s')[0], f+2]
+    v = x[f, 2].unpack('n').first
+    v -= 0x8000 if v >= 0x8000
+    [v, f+2]
   end
 
   decode_intl = lambda do |x, f|
     f += 1
-    [x[f, 4].unpack('N').pack('l').unpack('l')[0], f+4]
+    v = x[f, 4].unpack('N').first
+    v -= 0x80000000 if v >= 0x80000000
+    [v, f+4]
   end
 
   decode_intq = lambda do |x, f|
     f += 1
     x = x[f, 8]
-    x.reverse! if [1].pack('s') == "\001\000"
+    x.reverse! if LITTLE_ENDIAN
     [x.unpack('q')[0], f+8]
   end
 
   decode_float32 = lambda do |x, f|
     f += 1
     x = x[f, 4]
-    x.reverse! if [1].pack('s') == "\001\000"
+    x.reverse! if LITTLE_ENDIAN
     [x.unpack('f')[0], f+4]
   end
 
   decode_float64 = lambda do |x, f|
     f += 1
     x = x[f, 8]
-    x.reverse! if [1].pack('s') == "\001\000"
+    x.reverse! if LITTLE_ENDIAN
     [x.unpack('d')[0], f+8]
   end
 
