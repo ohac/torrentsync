@@ -154,7 +154,8 @@ class Deluge
   end
 
   def list
-    result = exec([2, 'core.get_torrents_status', [{}, {}], {}])
+    result = exec([2, 'core.get_torrents_status', [{}, ['name', 'progress']],
+        {}])
     transmissionlike = result[2].map do |k, v|
       { 'hashString' => k, 'name' => v['name'],
         'totalSize' => 1000, 'haveValid' => (v['progress'] * 10).to_i }
