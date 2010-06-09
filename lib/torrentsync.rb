@@ -310,7 +310,7 @@ def get_torrents(peers, usecache = true)
     if !usecache or modified.nil? or now >= modified + 60
       begin
         raise TimeoutError if !$failed[peer].nil? and now < $failed[peer] + 60
-        curtr = timeout(5) do
+        curtr = timeout(10) do
           type2class(type).new(host, port, user, pass).list
         end
         curtr['modified'] = now
