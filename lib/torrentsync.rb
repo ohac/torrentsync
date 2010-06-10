@@ -87,7 +87,7 @@ class UTorrent
       result = JSON.parse(res.body)
       transmissionlike = result['torrents'].map do |t|
         { 'hashString' => t[0].downcase, 'name' => t[2],
-          'totalSize' => 1000, 'haveValid' => t[4] }
+          'totalSize' => 1000, 'haveValid' => t[4] } # FIXME
       end
       { 'arguments' => { 'torrents' => transmissionlike } }
     end
@@ -154,11 +154,13 @@ class Deluge
   end
 
   def list
-    result = exec([2, 'core.get_torrents_status', [{}, ['name', 'progress']],
-        {}])
+    result = exec([2, 'core.get_torrents_status', [{},
+        ['name', 'progress', 'total_size']], {}])
     transmissionlike = result[2].map do |k, v|
+      size = v['total_size']
+      have = (size * v['progress'] / 100).to_i
       { 'hashString' => k, 'name' => v['name'],
-        'totalSize' => 1000, 'haveValid' => (v['progress'] * 10).to_i }
+        'totalSize' => size, 'haveValid' => have }
     end
     { 'arguments' => { 'torrents' => transmissionlike } }
   end
