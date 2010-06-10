@@ -16,6 +16,9 @@ Choice.options do
   option :sync do
     short '-s'
   end
+  option :dryrun do
+    short '-n'
+  end
   option :html do
     short '-h'
   end
@@ -26,7 +29,7 @@ if c.sync
   peers = get_peers
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
-  sync_torrents(peers - dead_peers, torrents, 2)
+  sync_torrents(peers - dead_peers, torrents, 2, c.dryrun)
 end
 if c.html
   peers = get_peers

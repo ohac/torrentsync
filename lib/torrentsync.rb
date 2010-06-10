@@ -359,7 +359,7 @@ def parse_size(str)
   end
 end
 
-def sync_torrent(peers, t, hash, rep)
+def sync_torrent(peers, t, hash, rep, dryrun = false)
   name = t[:name]
   hps = t[:peers]
   tsize = t[:size]
@@ -400,7 +400,7 @@ def sync_torrent(peers, t, hash, rep)
     host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
     dest = type2class(type).new(host, port, user, pass)
     begin
-      dest.add(body)
+      dest.add(body) unless dryrun
       [host, port]
     rescue
     end
@@ -408,9 +408,9 @@ def sync_torrent(peers, t, hash, rep)
   rv.compact
 end
 
-def sync_torrents(peers, torrents, rep)
+def sync_torrents(peers, torrents, rep, dryrun = false)
   torrents.each do |hash, t|
-    dests = sync_torrent(peers, t, hash, rep)
+    dests = sync_torrent(peers, t, hash, rep, dryrun)
     next if dests.nil?
     name = t[:name]
     dests.each do |dest|
