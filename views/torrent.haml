@@ -43,4 +43,5 @@
           %td= peer[2]
           %td{:class => status[peer]}= status[peer]
           - st = t[:peers].find{|hp, have| hostport == hp}
-          %td= '%d%%' % [st.nil? ? 0 : (st[1] * 100).to_i]
+          - per = st.nil? ? 0 : st[1] == 0 ? 1 : (st[1] * 100).to_i
+          %td= '%d%%' % per
