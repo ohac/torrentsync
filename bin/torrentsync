@@ -19,9 +19,6 @@ Choice.options do
   option :dryrun do
     short '-n'
   end
-  option :html do
-    short '-h'
-  end
 end
 
 c = Choice.choices
@@ -30,30 +27,4 @@ if c.sync
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
   sync_torrents(peers - dead_peers, torrents, 2, c.dryrun)
-end
-if c.html
-  peers = get_peers
-  torrents, status = get_torrents(peers)
-  dead_peers = status.select{|k,v| v == :dead}.map(&:first)
-  puts "<html>"
-  puts "<body>"
-
-  puts "<table>"
-  puts "<tr><th>Client</th><th>Host</th><th>Port</th><th>Dead?</th></tr>"
-  peers.each do |peer|
-    dead = dead_peers.include? peer
-    puts "<tr><td>#{peer[0]}</td><td>#{peer[1]}</td><td>#{peer[2]}</td><td>#{dead}</td></tr>"
-  end
-  puts "</table>"
-
-  puts "<table>"
-  puts "<tr><th>Hash</th><th>Name</th><th>Peers</th></tr>"
-  torrents.each do |hash, t|
-    total = t[:peers].inject(0.0){|v,h|v + h[1]}
-    puts "<tr><td>#{hash}</td><td>#{t[:name]}</td><td>#{t[:peers].size}(#{(total * 100).to_i}%)</td></tr>"
-  end
-  puts "</table>"
-
-  puts "</body>"
-  puts "</html>"
 end
