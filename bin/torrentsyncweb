@@ -70,8 +70,12 @@ end
 get '/' do
   peers = get_peers
   torrents, status = get_torrents(peers)
+  sortby = params[:s]
+  sortby = sortby ? sortby.to_sym : :name
+  torrents.each{|hsh, tr| tr[:rep] = tr[:peers].size}
   haml :index, :locals => {
-      :peers => peers, :torrents => torrents, :status => status }
+      :peers => peers, :torrents => torrents, :status => status,
+      :sortby => sortby }
 end
 
 def geturllist(name)
