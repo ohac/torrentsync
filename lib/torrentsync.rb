@@ -243,7 +243,7 @@ def find_torrent_by_name(name, hash)
       next if hash != hashstr
       rv = rv2
     end
-    break
+    break if rv
   end
   rv
 end
