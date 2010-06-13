@@ -227,20 +227,22 @@ def find_torrent_by_name(name, hash)
     else
       raise
     end
-    rp = ts.find{|t| !t.index(name).nil?}
-    next if rp.nil?
-    uri2 = URI.parse(("#{uri.to_s}/#{URI.encode(rp)}").gsub('[', '%5B').gsub(
-        ']', '%5D'))
-    rv = case uri2.scheme
-        when 'file'
-          open(URI.decode(uri2.path)){|f|f.read}
-        when 'http'
-          open(uri2){|f|f.read}
-        end
-    info = BEncode.load(rv)['info']
-    info_hash = Digest::SHA1.digest(BEncode.dump(info))
-    hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
-    next if hash != hashstr
+    ts.find do |rp|
+      next if rp.index(name).nil?
+      uri2 = URI.parse(("#{uri.to_s}/#{URI.encode(rp)}").gsub('[', '%5B').gsub(
+          ']', '%5D'))
+      rv2 = case uri2.scheme
+          when 'file'
+            open(URI.decode(uri2.path)){|f|f.read}
+          when 'http'
+            open(uri2){|f|f.read}
+          end
+      info = BEncode.load(rv2)['info']
+      info_hash = Digest::SHA1.digest(BEncode.dump(info))
+      hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
+      next if hash != hashstr
+      rv = rv2
+    end
     break
   end
   rv
