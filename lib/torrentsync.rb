@@ -319,7 +319,7 @@ def get_torrents(peers, usecache = true)
         curtr['modified'] = now
         save_to_cache(cache, curtr)
         tr = curtr
-      rescue TimeoutError, Errno::ECONNREFUSED
+      rescue TimeoutError, Errno::ECONNREFUSED, Errno::EHOSTUNREACH
         st = (!modified.nil? and now < modified + 7 * 24 * 60 * 60) ?
             :cached : :dead
         $failed[peer] = now
