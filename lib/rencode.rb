@@ -9,6 +9,7 @@ module REncode
   def self.dump(obj)
     bstr = BEncode.dump(obj)
     pycmd1 = "from deluge import rencode, bencode"
+    return nil if bstr.size > 10000 # FIXME
     pycmd2 = "rencode.dumps(bencode.bdecode('#{bstr}'))"
     `python -c "#{pycmd1}; print #{pycmd2}"`.chomp
   end
