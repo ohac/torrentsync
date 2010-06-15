@@ -1,17 +1,8 @@
 require 'rubygems'
-require 'bencode'
 
 module REncode
 
   class DecodeError < StandardError
-  end
-
-  def self.dump(obj)
-    bstr = BEncode.dump(obj)
-    pycmd1 = "from deluge import rencode, bencode"
-    return nil if bstr.size > 10000 # FIXME
-    pycmd2 = "rencode.dumps(bencode.bdecode('#{bstr}'))"
-    `python -c "#{pycmd1}; print #{pycmd2}"`.chomp
   end
 
   # Positive integers with value embedded in typecode.
@@ -234,6 +225,105 @@ module REncode
     r, l = @decode_func[x[0, 1]].call(x, 0)
     raise DecodeError if l != x.size
     r
+  end
+
+  class EncodeError < StandardError
+  end
+
+  encode_int = lambda do |x, r|
+    if 0 <= x and x < INT_POS_FIXED_COUNT
+      r << (INT_POS_FIXED_START+x).chr
+    elsif -INT_NEG_FIXED_COUNT <= x and x < 0
+      r << (INT_NEG_FIXED_START-1-x).chr
+    elsif -128 <= x and x < 128
+      r << CHR_INT1 << [x].pack('c')
+    elsif -32768 <= x and x < 32768
+      r << CHR_INT2 << [x].pack('n')
+    elsif -2147483648 <= x and x < 2147483648
+      r << CHR_INT4 << [x].pack('N')
+    elsif -9223372036854775808 <= x and x < 9223372036854775808
+      r << CHR_INT8 << [x].pack('Q') # FIXME must be big endian with 64 bits
+    else
+      s = x.to_s
+      raise EncodeError, 'overflow' if s.size >= MAX_INT_LENGTH
+      r << CHR_INT << s << CHR_TERM
+    end
+  end
+
+  encode_float32 = lambda do |x, r|
+    r << CHR_FLOAT32 << [x].pack('f') # FIXME must be big endian
+  end
+
+  encode_float64 = lambda do |x, r|
+    r << CHR_FLOAT64 << [x].pack('d') # FIXME must be big endian
+  end
+
+  encode_bool = lambda do |x, r|
+    r << (x ? CHR_TRUE : CHR_FALSE)
+  end
+
+  encode_none = lambda do |x, r|
+    r << CHR_NONE
+  end
+
+  encode_string = lambda do |x, r|
+    # TODO support UTF-8
+    if x.size < STR_FIXED_COUNT
+      r << (STR_FIXED_START + x.size).chr << x
+    else
+      r << x.size.to_s << ':' << x
+    end
+  end
+
+  encode_list = lambda do |x, r|
+    if x.size < LIST_FIXED_COUNT
+      r << (LIST_FIXED_START + x.size).chr
+      x.each do |i|
+        @encode_func[i.class].call(i, r)
+      end
+    else
+      r << CHR_LIST
+      x.each do |i|
+        @encode_func[i.class].call(i, r)
+      end
+      r << CHR_TERM
+    end
+  end
+
+  encode_dict = lambda do |x,r|
+    if x.size < DICT_FIXED_COUNT
+      r << (DICT_FIXED_START + x.size).chr
+      x.each do |k, v|
+        @encode_func[k.class].call(k, r)
+        @encode_func[v.class].call(v, r)
+      end
+    else
+      r << CHR_DICT
+      x.each do |k, v|
+        @encode_func[k.class].call(k, r)
+        @encode_func[v.class].call(v, r)
+      end
+      r << CHR_TERM
+    end
+  end
+
+  @encode_func = {}
+  @encode_func[Fixnum] = encode_int
+  @encode_func[Bignum] = encode_int
+  @encode_func[String] = encode_string
+  @encode_func[Array] = encode_list
+  @encode_func[Array] = encode_list
+  @encode_func[Hash] = encode_dict
+  @encode_func[NilClass] = encode_none
+  @encode_func[TrueClass] = encode_bool
+  @encode_func[FalseClass] = encode_bool
+  @encode_func[Float] = encode_float32
+  # @encode_func[Float] = encode_float64
+
+  def self.dump(x)
+    r = []
+    @encode_func[x.class].call(x, r)
+    r.join
   end
 
 end
