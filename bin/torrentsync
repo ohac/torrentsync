@@ -19,6 +19,9 @@ Choice.options do
   option :dryrun do
     short '-n'
   end
+  option :remove do
+    short '-r'
+  end
 end
 
 c = Choice.choices
@@ -27,4 +30,27 @@ if c.sync
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
   sync_torrents(peers - dead_peers, torrents, 2, c.dryrun)
+elsif c.remove
+  id = c.remove
+  peers = get_peers
+  torrents, status = get_torrents(peers)
+  t = torrents[id]
+  unless t
+    puts 'not found'
+    exit 1
+  end
+  hps = t[:peers].map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
+  haves = peers.select do |peer|
+    hps.any?{|hp| peer[1] == hp[0] && peer[2] == hp[1]}
+  end
+  haves.each do |peer|
+    type = peer[0]
+    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+    peer = type2class(type).new(host, port, user, pass)
+    puts "remove torrent from #{host}:#{port}"
+    begin
+      peer.remove(id) unless c.dryrun
+    rescue
+    end
+  end
 end
