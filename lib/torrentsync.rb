@@ -52,6 +52,10 @@ class Transmission
     exec('torrent-add', :metainfo => Base64::encode64(torrent))
   end
 
+  def remove(torrentid, removedata = false)
+    exec('torrent-remove', :ids => [torrentid],
+        'delete-local-data' => removedata)
+  end
 end
 
 class UTorrent
