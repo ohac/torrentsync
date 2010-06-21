@@ -107,6 +107,17 @@ EOF
       http.request(req)
     end
   end
+
+  def remove(torrentid, removedata = false)
+    Net::HTTP.start(@host, @port) do |http|
+      token = gettoken(http)
+      req = Net::HTTP::Get.new('/gui/?action=%s&hash=%s&token=%s' %
+          [removedata ? 'removedata' : 'remove', torrentid, token])
+      req.basic_auth @user, @pass
+      res = http.request(req)
+      JSON.parse(res.body)
+    end
+  end
 end
 
 class Deluge
