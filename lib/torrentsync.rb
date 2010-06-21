@@ -170,6 +170,10 @@ class Deluge
     filedump = Base64.encode64(torrent).split.join
     exec([2, 'core.add_torrent_file', [filename, filedump, {}], {}])
   end
+
+  def remove(torrentid, removedata = false)
+    exec([2, 'core.remove_torrent', [torrentid, removedata], {}])
+  end
 end
 
 HOME_DIR = ENV['HOME']
