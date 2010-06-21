@@ -66,13 +66,17 @@ class UTorrent
     @pass = pass
   end
 
+  def gettoken(http)
+    req = Net::HTTP::Get.new('/gui/token.html')
+    req.basic_auth @user, @pass
+    res = http.request(req)
+    h = Nokogiri::HTML.parse(res.body)
+    h.css('#token').text
+  end
+
   def list
     Net::HTTP.start(@host, @port) do |http|
-      req = Net::HTTP::Get.new('/gui/token.html')
-      req.basic_auth @user, @pass
-      res = http.request(req)
-      h = Nokogiri::HTML.parse(res.body)
-      token = h.css('#token').text
+      token = gettoken(http)
       req = Net::HTTP::Get.new('/gui/?list=1&token=%s' % token)
       req.basic_auth @user, @pass
       res = http.request(req)
@@ -85,14 +89,9 @@ class UTorrent
     end
   end
 
-  # TODO DRY
   def add(torrent)
     Net::HTTP.start(@host, @port) do |http|
-      req = Net::HTTP::Get.new('/gui/token.html')
-      req.basic_auth @user, @pass
-      res = http.request(req)
-      h = Nokogiri::HTML.parse(res.body)
-      token = h.css('#token').text
+      token = gettoken(http)
       req = Net::HTTP::Post.new('/gui/?action=add-file&token=%s' % token)
       req.basic_auth @user, @pass
       req.set_content_type('multipart/form-data; boundary=myboundary')
