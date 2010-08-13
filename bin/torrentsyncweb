@@ -127,8 +127,8 @@ post '/upload' do
   path = f[:tempfile].path
   origname = f[:filename]
   origname = NKF.nkf("-w", origname) # TODO i18n
-  name = origname.tr(" ", "_")
-  name = File.basename(name)
+  origname = origname.tr(" ", "_")
+  name = File.basename(origname)
   dest = File.join(download, name)
   redirect '/upload' if File.exist?(dest) # TODO error
   FileUtils.mv(path, dest)
