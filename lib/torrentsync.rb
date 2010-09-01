@@ -401,7 +401,7 @@ def sync_torrent(peers, t, hash, rep, dryrun = false)
       dice < 0
     end
     dests2 -= [winner]
-    winner[1]
+    winner.nil? ? nil : winner[1] # FIXME why nil?
   end
   dests.compact!
   return if dests.empty?
