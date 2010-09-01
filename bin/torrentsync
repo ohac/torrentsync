@@ -41,7 +41,7 @@ if c.list
         t[:size], name]
   end
 elsif c.sync
-  rep = c.sync.nil? ? 2 : c.sync.to_i
+  rep = c.sync.to_i rescue 2
   peers = get_peers
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
