@@ -36,7 +36,9 @@ if c.list
   torrents, status = get_torrents(peers)
   torrents.each do |hash, t|
     name = t[:name]
-    puts "%s %s" % [hash, name]
+    total = t[:peers].inject(0.0){|v,h|v + h[1]}
+    puts "%s %d(%3d%%) %11d %s" % [hash, t[:peers].size, (total * 100).to_i,
+        t[:size], name]
   end
 elsif c.sync
   rep = c.sync.nil? ? 2 : c.sync.to_i
