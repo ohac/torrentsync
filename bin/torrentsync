@@ -39,10 +39,11 @@ if c.list
     puts "%s %s" % [hash, name]
   end
 elsif c.sync
+  rep = c.sync.nil? ? 2 : c.sync.to_i
   peers = get_peers
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
-  sync_torrents(peers - dead_peers, torrents, 2, c.dryrun)
+  sync_torrents(peers - dead_peers, torrents, rep, c.dryrun)
 elsif c.remove || c.purge
   purge = c.purge
   id = c.remove || purge
