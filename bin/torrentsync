@@ -13,6 +13,9 @@ require 'torrentsync'
 require 'choice'
 
 Choice.options do
+  option :list do
+    short '-l'
+  end
   option :sync do
     short '-s'
   end
@@ -28,7 +31,14 @@ Choice.options do
 end
 
 c = Choice.choices
-if c.sync
+if c.list
+  peers = get_peers
+  torrents, status = get_torrents(peers)
+  torrents.each do |hash, t|
+    name = t[:name]
+    puts "%s %s" % [hash, name]
+  end
+elsif c.sync
   peers = get_peers
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
