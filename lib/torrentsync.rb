@@ -292,25 +292,34 @@ def load_from_cache(id)
   JSON.load(File.read(fn)) if File.exist?(fn)
 end
 
-def parallelmap(es)
+def parallelmap(es, ncore = 2)
   q = Queue.new
-  ts = es.map do |x|
-    Thread.new(x) do |y|
-      result = yield(y) rescue nil
-      q << [result, Thread.current]
+  a = Queue.new
+  tp = ncore.times.map do
+    Thread.new do
+      while y = q.pop
+        a << yield(y)
+      end
     end
-    sleep 0.5 # FIXME need to see the number of CPU cores
+  end
+  es.each do |x|
+    q.push(x)
+  end
+  ncore.times do
+    q.push(nil)
+  end
+  tp.each do |t|
+    t.join
   end
   es.map do
-    result, th = q.pop
-    th.join
-    result
+    a.pop
   end
 end
 
+
 $failed = {}
 def get_torrents(peers, usecache = true)
-  trs = parallelmap(peers) do |peer|
+  trs = parallelmap(peers, 4) do |peer|
     type = peer[0]
     next if type[0, 1] == '#'
     host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
