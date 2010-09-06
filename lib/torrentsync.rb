@@ -299,6 +299,7 @@ def parallelmap(es)
       result = yield(y) rescue nil
       q << [result, Thread.current]
     end
+    sleep 0.5 # FIXME need to see the number of CPU cores
   end
   es.map do
     result, th = q.pop
