@@ -139,14 +139,27 @@ class Deluge
     ssl.write(Zlib::Deflate.deflate(cmd))
     gz = Zlib::Inflate.new
     while !gz.finished?
-      gz << ssl.readchar.chr # FIXME method chr is for ruby1.8
+      gz << ssl.read(1)
     end
     result = REncode.load(gz.finish)
     raise result if result != [1, 1, 10]
 
     gz = Zlib::Inflate.new
-    while !gz.finished?
-      gz << ssl.readchar.chr # FIXME method chr is for ruby1.8
+    data = []
+    begin
+      timeout(0.90) do
+        loop do
+          chunk = ssl.readpartial(1024)
+          data << chunk
+          if chunk.size < 1024
+            gz << data.join
+            data = []
+            break if gz.finished?
+          end
+        end
+      end
+    rescue TimeoutError
+      gz << data.join if data.size > 0
     end
     result = REncode.load(gz.finish)
     raise result if result[0] != 1
