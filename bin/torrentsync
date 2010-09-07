@@ -30,6 +30,7 @@ Choice.options do
   end
 end
 
+load_torrents_db
 c = Choice.choices
 if c.list
   peers = get_peers
@@ -102,3 +103,4 @@ elsif c.remove || c.purge
     end
   end
 end
+save_torrents_db

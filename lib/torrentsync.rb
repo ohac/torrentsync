@@ -120,6 +120,7 @@ EOF
   end
 end
 
+$torrents_db = {}
 class Deluge
   def initialize(host, port, user = nil, pass = nil)
     @host = host
@@ -156,12 +157,23 @@ class Deluge
   end
 
   def list
-    result = exec([2, 'core.get_torrents_status', [{},
-        ['name', 'progress', 'total_size']], {}])
+    result = exec([2, 'core.get_torrents_status', [{}, ['progress']], {}])
+    if result[2].find{|k, v| !$torrents_db.key?(k)}
+      result2 = exec([2, 'core.get_torrents_status', [{},
+          ['name', 'total_size']], {}])
+      result[2].each do |k, v|
+        next if $torrents_db.key?(k)
+        v2 = result2[2][k]
+        $torrents_db[k] = {
+          :name => v2['name'],  :total_size => v2['total_size']
+        }
+      end
+    end
     transmissionlike = result[2].map do |k, v|
-      size = v['total_size']
+      v2 = $torrents_db[k]
+      size = v2[:total_size]
       have = (size * v['progress'] / 100).to_i
-      { 'hashString' => k, 'name' => v['name'],
+      { 'hashString' => k, 'name' => v2[:name],
         'totalSize' => size, 'haveValid' => have }
     end
     { 'arguments' => { 'torrents' => transmissionlike } }
@@ -437,5 +449,20 @@ def sync_torrents(peers, torrents, rep, dryrun = false)
       host, port = dest
       puts "mirroring: %s to %s:%d" % [name, host, port]
     end
+  end
+end
+
+CACHE_TORRENTS_DB = File.join(CACHE_DIR, 'torrents.db')
+def load_torrents_db
+  if File.exist?(CACHE_TORRENTS_DB)
+    File.open(CACHE_TORRENTS_DB, 'rb') do |fd|
+      $torrents_db = Marshal.load(fd.read)
+    end
+  end
+end
+
+def save_torrents_db
+  File.open(CACHE_TORRENTS_DB, 'wb') do |fd|
+    fd.write(Marshal.dump($torrents_db))
   end
 end
