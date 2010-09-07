@@ -34,22 +34,31 @@ c = Choice.choices
 if c.list
   peers = get_peers
   torrents, status = get_torrents(peers, false)
+  capacity = 0
+  peerinfo = {}
+  peers.each do |peer|
+    setting = find_peer_setting(peer[1], peer[2])
+    next if setting.nil?
+    size = parse_size(setting['size'])
+    peerinfo[[peer[1], peer[2]].join(':')] = { :size => size, :total => 0 }
+    capacity += size
+  end
   filesize1 = 0
   filesize2 = 0
   torrents.each do |hash, t|
     name = t[:name]
     total = t[:peers].inject(0.0){|v,h|v + h[1]}
+    t[:peers].each{|pr|peerinfo[pr[0]][:total] += (t[:size] * pr[1]).to_i}
     filesize1 += t[:size]
     filesize2 += (t[:size] * total).to_i
     puts "%s %d(%3d%%) %11d %s" % [hash, t[:peers].size, (total * 100).to_i,
         t[:size], name]
   end
-  capacity = 0
-  peers.map do |peer|
-    setting = find_peer_setting(peer[1], peer[2])
-    next if setting.nil?
-    size = setting['size']
-    capacity += parse_size(size)
+  puts
+  peerinfo.each do |key, val|
+    total = val[:total] / (1024.0 ** 3)
+    size = val[:size] / (1024.0 ** 3)
+    puts "%40s %6.1f GB / %6.1f GB" % [key, total, size]
   end
   puts
   puts "Total Size : %6.1f GB" % (filesize1 / (1024.0 ** 3))
