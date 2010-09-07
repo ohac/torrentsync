@@ -40,7 +40,9 @@ if c.list
     setting = find_peer_setting(peer[1], peer[2])
     next if setting.nil?
     size = parse_size(setting['size'])
-    peerinfo[[peer[1], peer[2]].join(':')] = { :size => size, :total => 0 }
+    peerinfo[[peer[1], peer[2]].join(':')] = {
+      :size => size, :total => 0, :have => 0
+    }
     capacity += size
   end
   filesize1 = 0
@@ -48,7 +50,10 @@ if c.list
   torrents.each do |hash, t|
     name = t[:name]
     total = t[:peers].inject(0.0){|v,h|v + h[1]}
-    t[:peers].each{|pr|peerinfo[pr[0]][:total] += (t[:size] * pr[1]).to_i}
+    t[:peers].each do |pr|
+      peerinfo[pr[0]][:total] += (t[:size] * pr[1]).to_i
+      peerinfo[pr[0]][:have] += 1
+    end
     filesize1 += t[:size]
     filesize2 += (t[:size] * total).to_i
     puts "%s %d(%3d%%) %11d %s" % [hash, t[:peers].size, (total * 100).to_i,
@@ -58,7 +63,8 @@ if c.list
   peerinfo.each do |key, val|
     total = val[:total] / (1024.0 ** 3)
     size = val[:size] / (1024.0 ** 3)
-    puts "%40s %6.1f GB / %6.1f GB" % [key, total, size]
+    have = val[:have]
+    puts "%40s %6.1f GB / %6.1f GB (%4d torrents)" % [key, total, size, have]
   end
   puts
   puts "Total Size : %6.1f GB" % (filesize1 / (1024.0 ** 3))
