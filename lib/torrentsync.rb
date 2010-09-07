@@ -340,7 +340,7 @@ def get_torrents(peers, usecache = true)
     modified = tr && tr['modified']
     now = Time.now.to_i
     st = :live
-    if !usecache or modified.nil? or now >= modified + rand(60)
+    if !usecache or modified.nil? or now >= modified + 30 + rand(60)
       begin
         if !$failed[peer].nil? and now < $failed[peer] + rand(60)
           raise TimeoutError
