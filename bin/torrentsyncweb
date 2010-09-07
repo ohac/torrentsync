@@ -70,6 +70,7 @@ end
 get '/' do
   peers = get_peers
   torrents, status = get_torrents(peers)
+  save_torrents_db
   sortby = params[:s]
   sortby = sortby ? sortby.to_sym : :name
   torrents.each{|hsh, tr| tr[:rep] = tr[:peers].size}
@@ -203,3 +204,5 @@ get '/scrape' do
     info_hash => { 'complete' => 1, 'downloaded' => 0, 'incomplete' => 0 }
   }})
 end
+
+load_torrents_db
