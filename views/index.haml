@@ -9,16 +9,33 @@
     %br
     %table
       %tr
+        %th Nick
         %th Client
-        %th Host
-        %th Port
+        %th Host:Port
         %th Status
-      - peers.each do |peer|
+        %th Used
+        %th Capacity
+        %th Torrents
+      - peerinfo.each do |key, peer|
         %tr
-          %td= peer[0]
-          %td= peer[1]
-          %td= peer[2]
-          %td{:class => status[peer]}= status[peer]
+          %td= peer[:nick]
+          %td= peer[:client]
+          %td= key
+          %td{:class => peer[:status]}= peer[:status]
+          %td{:class => :size}= sizestr(peer[:total])
+          %td{:class => :size}= sizestr(peer[:size])
+          %td{:class => :size}= peer[:have]
+    %br
+    %table
+      %tr
+        %th Total Size
+        %td{:class => :size}= sizestr(totalsize)
+      %tr
+        %th Used
+        %td{:class => :size}= sizestr(used)
+      %tr
+        %th Capacity
+        %td{:class => :size}= sizestr(capacity)
     %br
     %table
       %tr

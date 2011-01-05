@@ -40,8 +40,10 @@ helpers do
       "%3.1f KB" % (size / 1024.0)
     elsif size < 1024 ** 3
       "%3.1f MB" % (size / (1024.0 ** 2))
-    else
+    elsif size < 1024 ** 4
       "%3.1f GB" % (size / (1024.0 ** 3))
+    else
+      "%3.1f TB" % (size / (1024.0 ** 4))
     end
   end
 
@@ -70,13 +72,38 @@ end
 get '/' do
   peers = get_peers
   torrents, status = get_torrents(peers)
+  capacity = 0
+  peerinfo = {}
+  peers.each do |peer|
+    setting = find_peer_setting(peer[1], peer[2])
+    next if setting.nil?
+    size = parse_size(setting['size'])
+    peerinfo[[peer[1], peer[2]].join(':')] = {
+      :client => peer[0], :size => size, :total => 0, :have => 0,
+      :nick => setting['nick'], :status => status[peer]
+    }
+    capacity += size
+  end
+  filesize1 = 0
+  filesize2 = 0
+  torrents.each do |hash, t|
+    name = t[:name]
+    total = t[:peers].inject(0.0){|v,h|v + h[1]}
+    t[:peers].each do |pr|
+      peerinfo[pr[0]][:total] += (t[:size] * pr[1]).to_i
+      peerinfo[pr[0]][:have] += 1
+    end
+    filesize1 += t[:size]
+    filesize2 += (t[:size] * total).to_i
+    t[:rep] = t[:peers].size
+  end
   save_torrents_db
   sortby = params[:s]
   sortby = sortby ? sortby.to_sym : :name
-  torrents.each{|hsh, tr| tr[:rep] = tr[:peers].size}
   haml :index, :locals => {
       :peers => peers, :torrents => torrents, :status => status,
-      :sortby => sortby }
+      :sortby => sortby, :totalsize => filesize1, :used => filesize2,
+      :capacity => capacity, :peerinfo => peerinfo }
 end
 
 def geturllist(name)
