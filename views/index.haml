@@ -13,6 +13,7 @@
         %th Client
         %th Host:Port
         %th Status
+        %th Used(%)
         %th Used
         %th Capacity
         %th Torrents
@@ -22,6 +23,8 @@
           %td= peer[:client]
           %td= key
           %td{:class => peer[:status]}= peer[:status]
+          - usedp = peer[:total].to_f / peer[:size] * 100
+          %td{:class => :size}= "%5.1f %%" % usedp
           %td{:class => :size}= sizestr(peer[:total])
           %td{:class => :size}= sizestr(peer[:size])
           %td{:class => :size}= peer[:have]
@@ -30,6 +33,10 @@
       %tr
         %th Total Size
         %td{:class => :size}= sizestr(totalsize)
+      %tr
+        %th Used(%)
+        - usedp = used.to_f / capacity * 100
+        %td{:class => :size}= "%5.1f %%" % usedp
       %tr
         %th Used
         %td{:class => :size}= sizestr(used)
