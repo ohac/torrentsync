@@ -9,9 +9,19 @@
     %br
     %form{:action => '/upload', :method => 'post',
         :enctype => 'multipart/form-data'}
-      %label{:for => 'file1'} Upload File
+      %label{:for => 'file1'} STEP 1: Choose File
       %br
-      %input#file1{:type => 'file', :name => 'file', :size => 60}
+      %input.bigbutton#file1{:type => 'file', :name => 'file', :size => 30}
+      %br
+      %br
+      %label STEP 2
+      %br
+      %input.bigbutton{:type => 'submit', :value => 'Upload'}
+      %br
+      %br
+      %hr
+      %br
+      %label Options
       %br
       %br
       %label{:for => 'tracker1'} Tracker
@@ -22,6 +32,3 @@
       %br
       %input#private1{:type => 'checkbox', :name => 'private', :checked => true}
       %label{:for => 'private1'} Private
-      %br
-      %br
-      %input{:type => 'submit', :value => 'Upload'}
