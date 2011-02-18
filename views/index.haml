@@ -46,7 +46,12 @@
         %th Capacity
         %td{:class => :size}= sizestr(capacity)
     %br
-    %table
+    %input#hidegreen{:type => :checkbox} Hide green torrents
+    %br
+    %input#filter{:type => :text} Filter torrents
+    %br
+    %br
+    %table#torrents
       %tr
         %th
           %a{:href => '/?s=rep'} Peers
@@ -57,7 +62,7 @@
       - torrents.sort_by{|hsh, tr| tr[sortby]}.each do |hash, t|
         - total = t[:peers].inject(0.0){|v,h|v + h[1]}
         - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
-        %tr
+        %tr.torrent
           %td{:class => rep}== #{t[:peers].size}(#{(total * 100).to_i}%)
           %td{:class => :size}= sizestr(t[:size])
           %td
