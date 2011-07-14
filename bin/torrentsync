@@ -82,7 +82,9 @@ elsif c.sync or c.balance
   live_peers = peers - dead_peers
   balance = c.balance
   if balance
-    target = live_peers.find{|peer| peer.join(':').include?(balance)}
+    peer = live_peers.find{|pr| pr.join(':').include?(balance)}
+    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+    peer = type2class(peer[0]).new(host, port, user, pass)
     inc = {}
     torrents.each do |hash, t|
       next unless t[:peers].any?{|pr| pr[0].include?(balance)}
