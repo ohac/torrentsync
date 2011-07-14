@@ -19,6 +19,9 @@ Choice.options do
   option :sync do
     short '-s'
   end
+  option :balance do
+    short '-b'
+  end
   option :dryrun do
     short '-n'
   end
@@ -71,12 +74,35 @@ if c.list
   puts "Total Size : %6.1f GB" % (filesize1 / (1024.0 ** 3))
   puts "Used       : %6.1f GB" % (filesize2 / (1024.0 ** 3))
   puts "Capacity   : %6.1f GB" % (capacity / (1024.0 ** 3))
-elsif c.sync
+elsif c.sync or c.balance
   rep = c.sync.to_i rescue 2
   peers = get_peers
   torrents, status = get_torrents(peers)
   dead_peers = status.select{|k,v| v == :dead}.map(&:first)
-  sync_torrents(peers - dead_peers, torrents, rep, c.dryrun)
+  live_peers = peers - dead_peers
+  balance = c.balance
+  if balance
+    target = live_peers.find{|peer| peer.join(':').include?(balance)}
+    inc = {}
+    torrents.each do |hash, t|
+      next unless t[:peers].any?{|pr| pr[0].include?(balance)}
+      next if rand < 0.50
+      if t[:peers].size > rep
+        next if t[:peers].any?{|pr| pr[1] < 1.0}
+        puts "reduce #{t[:name]}"
+        begin
+          peer.remove(hash, true) unless c.dryrun
+        rescue
+        end
+      else
+        puts "replicate #{t[:name]}"
+        inc[hash] = t
+      end
+    end
+    torrents = inc
+    rep += 1
+  end
+  sync_torrents(live_peers, torrents, rep, c.dryrun)
 elsif c.remove || c.purge
   purge = c.purge
   id = c.remove || purge
