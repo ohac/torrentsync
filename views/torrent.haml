@@ -7,7 +7,7 @@
     %a{:href => '/'} Top
     - t = torrents[infohash]
     - name = t[:name]
-    - dt = find_torrent_by_name(name, infohash)
+    - dt = find_torrent_by_infohash(infohash)
     - dts = dt.nil? ? nil : "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
     %h1= t[:name]
     %ul

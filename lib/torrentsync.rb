@@ -230,6 +230,8 @@ end
 
 SETTING = YAML.load(File.read(SETTING_FILE))
 
+$infohash2uri = {}
+
 def find_torrent_by_name(name, hash)
   rv = nil
   get_all_torrents.find do |uri|
@@ -243,10 +245,24 @@ def find_torrent_by_name(name, hash)
     info = BEncode.load(rv2)['info']
     info_hash = Digest::SHA1.digest(BEncode.dump(info))
     hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
+    $infohash2uri[hashstr] = uri
     next if hash != hashstr
     rv = rv2
   end
   rv
+end
+
+def find_torrent_by_infohash(hash)
+  find_torrent_by_name('magic_word_fixme_fixme', hash) # TODO build database
+  uri = $infohash2uri[hash]
+  # TODO be DRY
+  uri2 = URI.parse(uri)
+  case uri2.scheme
+  when 'file'
+    open(URI.decode(uri2.path)){|f|f.read}
+  when 'http'
+    open(uri2){|f|f.read}
+  end
 end
 
 def get_all_torrents
