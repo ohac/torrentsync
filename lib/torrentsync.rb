@@ -231,39 +231,43 @@ end
 SETTING = YAML.load(File.read(SETTING_FILE))
 
 def find_torrent_by_name(name, hash)
-  uris = SETTING['torrents'].map{|u| URI.parse(u)}
   rv = nil
-  uris.each do |uri|
-    ts = case uri.scheme
-    when 'file'
-      fn = File.join(URI.decode(uri.path), '*.torrent')
-      Dir.glob(fn).map{|t|File.basename(t)}
-    when 'http'
-      body = open(uri).read
-      h = Nokogiri::HTML.parse(body)
-      h.css('a').map{|a| a.text}.select{|t| /\.torrent$/ === t}
-    else
-      raise
-    end
-    ts.find do |rp|
-      next if rp.index(name).nil?
-      uri2 = URI.parse(("#{uri.to_s}/#{URI.encode(rp)}").gsub('[', '%5B').gsub(
-          ']', '%5D'))
-      rv2 = case uri2.scheme
-          when 'file'
-            open(URI.decode(uri2.path)){|f|f.read}
-          when 'http'
-            open(uri2){|f|f.read}
-          end
-      info = BEncode.load(rv2)['info']
-      info_hash = Digest::SHA1.digest(BEncode.dump(info))
-      hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
-      next if hash != hashstr
-      rv = rv2
-    end
-    break if rv
+  get_all_torrents.find do |uri|
+    uri2 = URI.parse(uri)
+    rv2 = case uri2.scheme
+        when 'file'
+          open(URI.decode(uri2.path)){|f|f.read}
+        when 'http'
+          open(uri2){|f|f.read}
+        end
+    info = BEncode.load(rv2)['info']
+    info_hash = Digest::SHA1.digest(BEncode.dump(info))
+    hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
+    next if hash != hashstr
+    rv = rv2
   end
   rv
+end
+
+def get_all_torrents
+  uris = SETTING['torrents'].map{|u| URI.parse(u)}
+  tss = uris.map do |uri|
+    ts = case uri.scheme
+        when 'file'
+          fn = File.join(URI.decode(uri.path), '*.torrent')
+          Dir.glob(fn).map{|t|File.basename(t)}
+        when 'http'
+          body = open(uri).read
+          h = Nokogiri::HTML.parse(body)
+          h.css('a').map{|a| a.text}.select{|t| /\.torrent$/ === t}
+        else
+          raise
+        end
+    ts.map do |rp|
+      "#{uri.to_s}/#{URI.encode(rp)}".gsub('[', '%5B').gsub(']', '%5D')
+    end
+  end
+  tss.flatten
 end
 
 def type2class(type)
