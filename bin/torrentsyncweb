@@ -109,11 +109,14 @@ end
 def geturllist(name)
   SETTING['webseeds'].select do |url|
     u = URI.parse(url)
-    code = Net::HTTP.start(u.host, u.port) do |http|
-      res = http.head("#{u.path.chomp('/')}/#{name}")
-      res.code.to_i
+    begin
+      code = Net::HTTP.start(u.host, u.port) do |http|
+        res = http.head("#{u.path.chomp('/')}/#{name}")
+        res.code.to_i
+      end
+      code / 100 == 2
+    rescue
     end
-    code / 100 == 2
   end
 end
 
