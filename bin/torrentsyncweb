@@ -55,6 +55,7 @@ CONTENT_TYPES = {
     :js => 'application/javascript',
     :yaml => 'text/yaml',
     :txt => 'text/plain',
+    :torrent => 'application/x-bittorrent',
     }
 
 before do
@@ -63,6 +64,7 @@ before do
     when /\.js$/ ; :js
     when /\.yaml$/ ; :txt
     when /\.txt$/ ; :txt
+    when /\.torrent$/ ; :torrent
     else :html
   end
   content_type CONTENT_TYPES[request_uri], :charset => 'utf-8'
@@ -118,6 +120,11 @@ def geturllist(name)
     rescue
     end
   end
+end
+
+get '/d/:infohash.torrent' do
+  infohash = params[:infohash]
+  find_torrent_by_infohash(infohash)
 end
 
 get '/t/:infohash' do

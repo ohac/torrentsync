@@ -7,8 +7,6 @@
     %a{:href => '/'} Top
     - t = torrents[infohash]
     - name = t[:name]
-    - dt = find_torrent_by_infohash(infohash)
-    - dts = dt.nil? ? nil : "data:application/x-bittorrent;base64,#{Base64.encode64(dt)}"
     %h1= t[:name]
     %ul
       - webseeds.each do |webseed|
@@ -16,13 +14,12 @@
         - u = URI.parse(webseed)
         %li
           %a{:href => webseed + '/' + name}== Download from #{u.host}
-      - unless dts.nil?
-        %li
-          %a{:href => dts} Download torrent
-        %li
-          replicate
-          - (2..9).each do |r|
-            %a{:href => "/r/#{infohash}?rep=#{r}"}== [#{r}]
+      %li
+        %a{:href => "/d/#{infohash}.torrent"} Download torrent
+      %li
+        replicate
+        - (2..9).each do |r|
+          %a{:href => "/r/#{infohash}?rep=#{r}"}== [#{r}]
       %li= infohash
       - total = t[:peers].inject(0.0){|v,h|v + h[1]}
       - rep = total < 1 ? :broken : total < 2 ? :poor : total < 3 ? :good : :great
