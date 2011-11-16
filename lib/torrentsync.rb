@@ -13,6 +13,7 @@ require 'socket'
 require 'openssl'
 require 'zlib'
 require 'rencode'
+require 'yaml'
 
 class Transmission
   def initialize(host, port, user = nil, pass = nil)
