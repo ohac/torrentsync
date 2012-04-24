@@ -1,3 +1,4 @@
+# coding: utf-8
 require 'rubygems'
 
 module REncode
@@ -107,7 +108,7 @@ module REncode
     n = x[f, colon - f].to_i
     raise DecodeError if x[f, 1] == '0' and colon != f+1
     colon += 1
-    s = x[colon, n] # TODO support UTF-8
+    s = x[colon, n].force_encoding('UTF-8')
     [s, colon+n]
   end
 
@@ -168,7 +169,7 @@ module REncode
   def self.make_fixed_length_string_decoders()
     STR_FIXED_COUNT.times do |i|
       @decode_func[(STR_FIXED_START+i).chr] = lambda {|x, f|
-        s = x[f+1, i] # TODO support UTF-8
+        s = x[f+1, i].force_encoding('UTF-8')
         [s, f+1+i]
       }
     end
@@ -267,11 +268,11 @@ module REncode
   end
 
   encode_string = lambda do |x, r|
-    # TODO support UTF-8
-    if x.size < STR_FIXED_COUNT
-      r << (STR_FIXED_START + x.size).chr << x
+    size = x.unpack('C*').size
+    if size < STR_FIXED_COUNT
+      r << (STR_FIXED_START + size).chr << x
     else
-      r << x.size.to_s << ':' << x
+      r << size.to_s << ':' << x
     end
   end
 
