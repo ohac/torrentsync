@@ -1,6 +1,13 @@
 # coding: utf-8
 require 'rubygems'
 
+# for ruby 1.8
+class String
+  def force_encoding(e)
+    self
+  end
+end
+
 module REncode
 
   class DecodeError < StandardError
