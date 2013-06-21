@@ -188,6 +188,9 @@ post '/upload' do
   end
   if piece.size > 0
     torrent_pieces << Digest::SHA1.digest(piece)
+    length = torrent_piece_size * (torrent_pieces.size - 1) + piece.size
+  else
+    length = torrent_piece_size * torrent_pieces.size
   end
   torrent = {
     'announce' => announce,
@@ -195,7 +198,7 @@ post '/upload' do
     'creation date' => Time.now.to_i,
     'url-list' => SETTING['webseeds'].map{|ws|ws.chomp('/') + '/'},
     'info' => {
-      'length' => torrent_piece_size * (torrent_pieces.size - 1) + piece.size,
+      'length' => length,
       'name' => origname,
       'private' => priv ? 1 : 0,
       'pieces' => torrent_pieces.join,
