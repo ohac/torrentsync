@@ -167,48 +167,57 @@ post '/upload' do
   origname = f[:filename]
   origname = NKF.nkf("-w", origname) # TODO i18n
   origname = origname.tr(" ", "_")
-  name = File.basename(origname)
-  dest = File.join(download, name)
-  redirect '/upload' if File.exist?(dest) # TODO error
-  FileUtils.mv(path, dest)
-  FileUtils.chmod(0644, dest)
-  torrent_piece_size = 2 ** 18
-  torrent_pieces = []
-  piece = ''
-  File.open(dest, 'rb') do |fd|
-    loop do
-      data = fd.read(torrent_piece_size - piece.size)
-      break if data.nil?
-      piece << data
-      if piece.size == torrent_piece_size
-        torrent_pieces << Digest::SHA1.digest(piece)
-        piece = ''
+  if /\.torrent$/ === origname
+    body = File.open(path, 'rb'){|fd| fd.read}
+    dest = File.join(torrents, origname)
+    FileUtils.mv(path, dest)
+    FileUtils.chmod(0644, dest)
+    torrent = BEncode.load(body)
+  else
+    name = File.basename(origname)
+    dest = File.join(download, name)
+    redirect '/upload' if File.exist?(dest) # TODO error
+    FileUtils.mv(path, dest)
+    FileUtils.chmod(0644, dest)
+    torrent_piece_size = 2 ** 18
+    torrent_pieces = []
+    piece = ''
+    File.open(dest, 'rb') do |fd|
+      loop do
+        data = fd.read(torrent_piece_size - piece.size)
+        break if data.nil?
+        piece << data
+        if piece.size == torrent_piece_size
+          torrent_pieces << Digest::SHA1.digest(piece)
+          piece = ''
+        end
       end
     end
-  end
-  if piece.size > 0
-    torrent_pieces << Digest::SHA1.digest(piece)
-    length = torrent_piece_size * (torrent_pieces.size - 1) + piece.size
-  else
-    length = torrent_piece_size * torrent_pieces.size
-  end
-  torrent = {
-    'announce' => announce,
-    'created by' => 'torrentsync 0.0.0',
-    'creation date' => Time.now.to_i,
-    'url-list' => SETTING['webseeds'].map{|ws|ws.chomp('/') + '/'},
-    'info' => {
-      'length' => length,
-      'name' => origname,
-      'private' => priv ? 1 : 0,
-      'pieces' => torrent_pieces.join,
-      'piece length' => torrent_piece_size,
+    if piece.size > 0
+      torrent_pieces << Digest::SHA1.digest(piece)
+      length = torrent_piece_size * (torrent_pieces.size - 1) + piece.size
+    else
+      length = torrent_piece_size * torrent_pieces.size
+    end
+    torrent = {
+      'announce' => announce,
+      'created by' => 'torrentsync 0.0.0',
+      'creation date' => Time.now.to_i,
+      'url-list' => SETTING['webseeds'].map{|ws|ws.chomp('/') + '/'},
+      'info' => {
+        'length' => length,
+        'name' => origname,
+        'private' => priv ? 1 : 0,
+        'pieces' => torrent_pieces.join,
+        'piece length' => torrent_piece_size,
+      }
     }
-  }
-  body = BEncode.dump(torrent)
-  File.open("#{torrents}/#{name}.torrent", "wb") do |fd|
-    fd.write(body)
+    body = BEncode.dump(torrent)
+    File.open("#{torrents}/#{name}.torrent", "wb") do |fd|
+      fd.write(body)
+    end
   end
+  info_hash = Digest::SHA1.hexdigest(BEncode.dump(torrent['info']))
   nick = SETTING['local']['peer']
   localpeer = SETTING['peers'].find{|peer| peer['nick'] == nick}
   type = localpeer['client']
@@ -220,7 +229,6 @@ post '/upload' do
   pass = nil if pass == ''
   dest = type2class(type).new(host, port, user, pass)
   dest.add(body)
-  info_hash = Digest::SHA1.hexdigest(BEncode.dump(torrent['info']))
   redirect "/r/#{info_hash}?cache=false&rep=2"
 end
 
