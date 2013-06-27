@@ -234,33 +234,7 @@ SETTING = YAML.load(File.read(SETTING_FILE))
 
 $infohash2uri = {}
 
-def find_torrent_by_name(hash)
-  rv = nil
-  get_all_torrents.find do |uri|
-    uri2 = URI.parse(uri)
-    rv2 = case uri2.scheme
-        when 'file'
-          open(URI.decode(uri2.path)){|f|f.read}
-        when 'http'
-          open(uri2){|f|f.read}
-        end
-    info = BEncode.load(rv2)['info']
-    info_hash = Digest::SHA1.digest(BEncode.dump(info))
-    hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
-    $infohash2uri[hashstr] = uri
-    next if hash != hashstr
-    rv = rv2
-  end
-  rv
-end
-
-def find_torrent_by_infohash(hash)
-  uri = $infohash2uri[hash]
-  unless uri
-    find_torrent_by_name(hash) # TODO build database
-    uri = $infohash2uri[hash]
-  end
-  # TODO be DRY
+def readbody(uri)
   uri2 = URI.parse(uri)
   case uri2.scheme
   when 'file'
@@ -268,6 +242,22 @@ def find_torrent_by_infohash(hash)
   when 'http'
     open(uri2){|f|f.read}
   end
+end
+
+def find_torrent(hash)
+  uri = $infohash2uri[hash]
+  return readbody(uri) if uri
+  get_all_torrents.find do |uri|
+    next if $infohash2uri.value?(uri)
+    rv2 = readbody(uri)
+    info = BEncode.load(rv2)['info']
+    info_hash = Digest::SHA1.digest(BEncode.dump(info))
+    hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
+    $infohash2uri[hashstr] = uri
+    next if hash != hashstr
+    return rv2
+  end
+  nil
 end
 
 def get_all_torrents
@@ -423,7 +413,7 @@ def sync_torrent(peers, t, hash, rep, dryrun = false)
   hps = t[:peers]
   tsize = t[:size]
   return if hps.size >= rep
-  body = find_torrent_by_name(hash)
+  body = find_torrent(hash)
   return if body.nil?
   hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
   dests = peers.select do |peer|

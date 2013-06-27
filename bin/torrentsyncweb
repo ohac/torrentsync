@@ -124,7 +124,7 @@ end
 
 get '/d/:infohash.torrent' do
   infohash = params[:infohash]
-  find_torrent_by_infohash(infohash)
+  find_torrent(infohash)
 end
 
 get '/t/:infohash' do
