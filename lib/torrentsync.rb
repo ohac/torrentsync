@@ -234,7 +234,7 @@ SETTING = YAML.load(File.read(SETTING_FILE))
 
 $infohash2uri = {}
 
-def find_torrent_by_name(name, hash)
+def find_torrent_by_name(hash)
   rv = nil
   get_all_torrents.find do |uri|
     uri2 = URI.parse(uri)
@@ -255,8 +255,11 @@ def find_torrent_by_name(name, hash)
 end
 
 def find_torrent_by_infohash(hash)
-  find_torrent_by_name('magic_word_fixme_fixme', hash) # TODO build database
   uri = $infohash2uri[hash]
+  unless uri
+    find_torrent_by_name(hash) # TODO build database
+    uri = $infohash2uri[hash]
+  end
   # TODO be DRY
   uri2 = URI.parse(uri)
   case uri2.scheme
@@ -420,7 +423,7 @@ def sync_torrent(peers, t, hash, rep, dryrun = false)
   hps = t[:peers]
   tsize = t[:size]
   return if hps.size >= rep
-  body = find_torrent_by_name(name, hash)
+  body = find_torrent_by_name(hash)
   return if body.nil?
   hps = hps.map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
   dests = peers.select do |peer|

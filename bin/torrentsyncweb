@@ -19,7 +19,7 @@ require 'fileutils'
 require 'digest/sha1'
 
 TORRENTSYNC_HOME = File.dirname(__FILE__) + '/../'
-set :public, TORRENTSYNC_HOME + 'public'
+set :public_folder, TORRENTSYNC_HOME + 'public'
 set :views, TORRENTSYNC_HOME + 'views'
 
 enable :sessions
