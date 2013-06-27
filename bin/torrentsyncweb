@@ -193,11 +193,10 @@ post '/upload' do
         end
       end
     end
+    length = torrent_piece_size * torrent_pieces.size
     if piece.size > 0
       torrent_pieces << Digest::SHA1.digest(piece)
-      length = torrent_piece_size * (torrent_pieces.size - 1) + piece.size
-    else
-      length = torrent_piece_size * torrent_pieces.size
+      length += piece.size
     end
     torrent = {
       'announce' => announce,
