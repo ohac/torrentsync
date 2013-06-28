@@ -31,6 +31,9 @@ Choice.options do
   option :purge do
     short '-p'
   end
+  option :check do
+    short '-c'
+  end
 end
 
 load_torrents_db
@@ -127,6 +130,30 @@ elsif c.remove || c.purge
     puts "remove torrent from #{host}:#{port}"
     begin
       peer.remove(id, purge) unless c.dryrun
+    rescue
+    end
+  end
+elsif c.check
+  # TODO DRY
+  id = c.check
+  peers = get_peers
+  torrents, status = get_torrents(peers)
+  t = torrents[id]
+  unless t
+    puts 'not found'
+    exit 1
+  end
+  hps = t[:peers].map{|hp| host, port = hp[0].split(':'); [host, port.to_i]}
+  haves = peers.select do |peer|
+    hps.any?{|hp| peer[1] == hp[0] && peer[2] == hp[1]}
+  end
+  haves.each do |peer|
+    type = peer[0]
+    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+    peer = type2class(type).new(host, port, user, pass)
+    puts "check torrent of #{host}:#{port}"
+    begin
+      peer.check(id) unless c.dryrun
     rescue
     end
   end

@@ -190,6 +190,10 @@ class Deluge
   def remove(torrentid, removedata = false)
     exec([2, 'core.remove_torrent', [torrentid, removedata], {}])
   end
+
+  def check(torrentid)
+    exec([2, 'core.force_recheck', [[torrentid]], {}])
+  end
 end
 
 HOME_DIR = ENV['HOME']
