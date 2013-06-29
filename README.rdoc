@@ -9,7 +9,7 @@ Sync torrents to BitTorrent clients such as Deluge.
 
 == Run Web Server
 
-* bin/torrentsyncweb
+* rackup
 
 == Run Command
 

@@ -324,14 +324,21 @@ def find_peer_setting(host, port)
 end
 
 def save_to_cache(id, status)
-  File.open(File.join(CACHE_DIR, id), 'w') do |f|
-    f.write(status.to_json)
+  File.open(File.join(CACHE_DIR, id), 'wb') do |fd|
+    fd.write(Marshal.dump(status))
   end
 end
 
 def load_from_cache(id)
   fn = File.join(CACHE_DIR, id)
-  JSON.load(File.read(fn)) if File.exist?(fn)
+  if File.exist?(fn)
+    begin
+      File.open(fn, 'rb') do |fd|
+        Marshal.load(fd.read)
+      end
+    rescue ArgumentError
+    end
+  end
 end
 
 def parallelmap(es, ncore = 2)
