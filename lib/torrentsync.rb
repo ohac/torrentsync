@@ -144,7 +144,7 @@ class Deluge
       gz << ssl.read(1)
     end
     result = REncode.load(gz.finish)
-    raise result if result != [1, 1, 10]
+    raise TimeoutError if result != [1, 1, 10]
 
     gz = Zlib::Inflate.new
     while !gz.finished?
@@ -217,10 +217,21 @@ unless File.exist?(SETTING_FILE)
           'password' => '',
           'limit' => '10MB',
           'size' => '10GB',
+        },
+        {
+          'nick' => 'localpeer2',
+          'client' => 'deluge',
+          'host' => 'localhost',
+          'port' => 58846,
+          'username' => 'localclient',
+          'password' => 'ffffffffffffffffffffffffffffffffffffffff',
+          'limit' => '10MB',
+          'size' => '10GB',
         }
       ],
       'torrents' => [
-        "file:#{HOME_DIR}/.config/transmission/torrents"
+        "file:#{HOME_DIR}/.config/transmission/torrents",
+        "file:#{HOME_DIR}/.config/deluge/state"
       ],
       'local' => {
         'download' => "#{HOME_DIR}/Downloads",
