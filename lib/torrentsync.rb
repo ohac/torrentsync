@@ -336,7 +336,7 @@ def load_from_cache(id)
       File.open(fn, 'rb') do |fd|
         Marshal.load(fd.read)
       end
-    rescue ArgumentError
+    rescue
     end
   end
 end
