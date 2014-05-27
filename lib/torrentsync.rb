@@ -144,7 +144,7 @@ class Deluge
       gz << ssl.read(1)
     end
     result = REncode.load(gz.finish)
-    raise result if result != [1, 1, 10]
+    raise TimeoutError if result != [1, 1, 10]
 
     gz = Zlib::Inflate.new
     while !gz.finished?
@@ -217,10 +217,21 @@ unless File.exist?(SETTING_FILE)
           'password' => '',
           'limit' => '10MB',
           'size' => '10GB',
+        },
+        {
+          'nick' => 'localpeer2',
+          'client' => 'deluge',
+          'host' => 'localhost',
+          'port' => 58846,
+          'username' => 'localclient',
+          'password' => 'ffffffffffffffffffffffffffffffffffffffff',
+          'limit' => '10MB',
+          'size' => '10GB',
         }
       ],
       'torrents' => [
-        "file:#{HOME_DIR}/.config/transmission/torrents"
+        "file:#{HOME_DIR}/.config/transmission/torrents",
+        "file:#{HOME_DIR}/.config/deluge/state"
       ],
       'local' => {
         'download' => "#{HOME_DIR}/Downloads",
@@ -313,14 +324,21 @@ def find_peer_setting(host, port)
 end
 
 def save_to_cache(id, status)
-  File.open(File.join(CACHE_DIR, id), 'w') do |f|
-    f.write(status.to_json)
+  File.open(File.join(CACHE_DIR, id), 'wb') do |fd|
+    fd.write(Marshal.dump(status))
   end
 end
 
 def load_from_cache(id)
   fn = File.join(CACHE_DIR, id)
-  JSON.load(File.read(fn)) if File.exist?(fn) && !File.zero?(fn)
+  if File.exist?(fn) && !File.zero?(fn)
+    begin
+      File.open(fn, 'rb') do |fd|
+        Marshal.load(fd.read)
+      end
+    rescue
+    end
+  end
 end
 
 def parallelmap(es, ncore = 2)
