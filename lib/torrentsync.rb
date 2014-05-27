@@ -320,7 +320,7 @@ end
 
 def load_from_cache(id)
   fn = File.join(CACHE_DIR, id)
-  JSON.load(File.read(fn)) if File.exist?(fn)
+  JSON.load(File.read(fn)) if File.exist?(fn) && !File.zero?(fn)
 end
 
 def parallelmap(es, ncore = 2)
