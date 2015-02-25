@@ -246,8 +246,9 @@ unless File.exist?(SETTING_FILE)
 end
 
 SETTING = YAML.load(File.read(SETTING_FILE))
+INFOHASH2URI = 'infohash2uri'
 
-$infohash2uri = {}
+$infohash2uri = load_from_cache(INFOHASH2URI) || {}
 
 def readbody(uri)
   uri2 = URI.parse(uri)
@@ -270,8 +271,10 @@ def find_torrent(hash)
     hashstr = info_hash.unpack('C*').map{|v|"%02x" % v}.join
     $infohash2uri[hashstr] = uri
     next if hash != hashstr
+    save_to_cache(INFOHASH2URI, $infohash2uri)
     return rv2
   end
+  save_to_cache(INFOHASH2URI, $infohash2uri)
   nil
 end
 
