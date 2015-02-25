@@ -248,7 +248,7 @@ end
 SETTING = YAML.load(File.read(SETTING_FILE))
 INFOHASH2URI = 'infohash2uri'
 
-$infohash2uri = load_from_cache(INFOHASH2URI) || {}
+$infohash2uri = nil
 
 def readbody(uri)
   uri2 = URI.parse(uri)
@@ -343,6 +343,8 @@ def load_from_cache(id)
     end
   end
 end
+
+$infohash2uri = load_from_cache(INFOHASH2URI) || {}
 
 def parallelmap(es, ncore = 2)
   q = Queue.new
