@@ -124,16 +124,17 @@ end
 
 $torrents_db = {}
 class Deluge
-  def initialize(host, port, user = nil, pass = nil)
+  def initialize(host, port, user = nil, pass = nil, tls = '')
     @host = host
     @port = port
+    @tls = tls
     @user = user
     @pass = pass
   end
 
   def exec(command)
     soc = TCPSocket.new(@host, @port)
-    context = OpenSSL::SSL::SSLContext.new('SSLv3')
+    context = OpenSSL::SSL::SSLContext.new(@tls.nil? ? 'SSLv3' : @tls)
     ssl = OpenSSL::SSL::SSLSocket.new(soc, context)
     ssl.connect
 
@@ -223,6 +224,7 @@ unless File.exist?(SETTING_FILE)
           'client' => 'deluge',
           'host' => 'localhost',
           'port' => 58846,
+          'tls' => 'TLSv1_client',
           'username' => 'localclient',
           'password' => 'ffffffffffffffffffffffffffffffffffffffff',
           'limit' => '10MB',
@@ -312,9 +314,9 @@ end
 
 def get_peers
   SETTING['peers'].map do |i|
-    vs = ['client', 'host', 'port', 'username', 'password'].map do |j|
+    vs = ['client', 'host', 'port', 'username', 'password', 'tls'].map do |j|
       v = i[j]
-      v.size == '' ? nil : v
+      v == nil || v.size == '' ? nil : v
     end
     vs.compact
   end
@@ -376,7 +378,7 @@ def get_torrents(peers, usecache = true)
   trs = parallelmap(peers, 4) do |peer|
     type = peer[0]
     next if type[0, 1] == '#'
-    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
+    host, port, user, pass, tls = peer[1], peer[2].to_i, peer[3], peer[4], peer[5]
     cache = "#{host}_#{port}"
     tr = load_from_cache(cache)
     modified = tr && tr['modified']
@@ -388,7 +390,7 @@ def get_torrents(peers, usecache = true)
           raise TimeoutError
         end
         curtr = timeout(10) do
-          type2class(type).new(host, port, user, pass).list
+          type2class(type).new(host, port, user, pass, tls).list
         end
         curtr['modified'] = now
         save_to_cache(cache, curtr)
