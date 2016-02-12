@@ -222,11 +222,12 @@ post '/upload' do
   type = localpeer['client']
   host = localpeer['host']
   port = localpeer['port']
+  tls = localpeer['tls']
   user = localpeer['username']
   pass = localpeer['password']
   user = nil if user == ''
   pass = nil if pass == ''
-  dest = type2class(type).new(host, port, user, pass)
+  dest = type2class(type).new(host, port, user, pass, tls)
   dest.add(body)
   redirect "/r/#{info_hash}?cache=false&rep=2"
 end

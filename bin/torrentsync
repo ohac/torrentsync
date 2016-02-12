@@ -86,8 +86,8 @@ elsif c.sync or c.balance
   balance = c.balance
   if balance
     peer = live_peers.find{|pr| pr.join(':').include?(balance)}
-    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
-    peer = type2class(peer[0]).new(host, port, user, pass)
+    host, port, user, pass, tls = peer[1], peer[2].to_i, peer[3], peer[4], peer[5]
+    peer = type2class(peer[0]).new(host, port, user, pass, tls)
     inc = {}
     torrents.each do |hash, t|
       next unless t[:peers].any?{|pr| pr[0].include?(balance)}
@@ -125,8 +125,8 @@ elsif c.remove || c.purge
   end
   haves.each do |peer|
     type = peer[0]
-    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
-    peer = type2class(type).new(host, port, user, pass)
+    host, port, user, pass, tls = peer[1], peer[2].to_i, peer[3], peer[4], peer[5]
+    peer = type2class(type).new(host, port, user, pass, tls)
     puts "remove torrent from #{host}:#{port}"
     begin
       peer.remove(id, purge) unless c.dryrun
@@ -149,8 +149,8 @@ elsif c.check
   end
   haves.each do |peer|
     type = peer[0]
-    host, port, user, pass = peer[1], peer[2].to_i, peer[3], peer[4]
-    peer = type2class(type).new(host, port, user, pass)
+    host, port, user, pass, tls = peer[1], peer[2].to_i, peer[3], peer[4], peer[5]
+    peer = type2class(type).new(host, port, user, pass, tls)
     puts "check torrent of #{host}:#{port}"
     begin
       peer.check(id) unless c.dryrun
