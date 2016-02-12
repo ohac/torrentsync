@@ -475,8 +475,8 @@ def sync_torrent(peers, t, hash, rep, dryrun = false)
   return if dests.empty?
   rv = dests.map do |dest|
     type = dest[0]
-    host, port, user, pass = dest[1], dest[2].to_i, dest[3], dest[4]
-    dest = type2class(type).new(host, port, user, pass)
+    host, port, user, pass, tls = dest[1], dest[2].to_i, dest[3], dest[4], dest[5]
+    dest = type2class(type).new(host, port, user, pass, tls)
     begin
       dest.add(body) unless dryrun
       [host, port]
